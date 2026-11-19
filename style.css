@@ -399,3 +399,18 @@ footer a { color: var(--accent); }
   .map-wrap { grid-template-columns: minmax(0, 1fr); }
   .country-sidebar { max-height: none; }
 }
+
+
+/* iPad/Touch: Länderinfos direkt über der Karte anzeigen, nicht weit darunter. */
+@media (max-width: 850px) {
+  .map-wrap.has-sidebar .country-sidebar {
+    position: absolute;
+    top: .75rem;
+    right: .75rem;
+    z-index: 1000;
+    width: min(320px, calc(100% - 1.5rem));
+    max-height: calc(100% - 1.5rem);
+    overflow-y: auto;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, .35);
+  }
+}
