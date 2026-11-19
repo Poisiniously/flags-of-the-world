@@ -291,7 +291,7 @@ function matchingMapCountries(query) {
     );
     // Autocomplete should match the beginning of a word, not arbitrary
     // substrings (e.g. "d" must not match Algeria only because of ".dz").
-    const words = haystack.split(/[^\\p{L}\\p{N}]+/u).filter(Boolean);
+    const words = haystack.split(/\s+/).filter(Boolean);
     return terms.every((term) => words.some((word) => word.startsWith(term)));
   });
 }
