@@ -1,9 +1,10 @@
+import * as maplibregl from "https://unpkg.com/maplibre-gl@6.19.0/dist/maplibre-gl.mjs";
+
 // =====================================================================
-// Reiter-Navigation + interaktive Weltkarte (Leaflet)
+// Reiter-Navigation + interaktive Weltkarte (MapLibre GL JS)
 //
-// Die Ländergrenzen werden über die geoBoundaries-API geladen.
-// Länderdaten kommen aus script.js (items / dataReady) und werden per ISO-3
-// zugeordnet. Bei API-Ausfall bleibt world.geo.json als Fallback verfügbar.
+// Ländergrenzen von geoBoundaries, mit world.geo.json als Fallback.
+// MapLibre GL JS rendert die GeoJSON-Polygone per WebGL.
 // =====================================================================
 
 const GEOBOUNDARIES_API_URL = "https://www.geoboundaries.org/api/current/gbOpen/ALL/ADM0/";
@@ -35,7 +36,6 @@ const SCALES = {
 };
 
 let map = null;
-let geoLayer = null;
 let geoData = null;
 let mapStarted = false;
 let colorMode = "continent";
@@ -89,7 +89,9 @@ const ISO3_BY_CODE = {
 let countryByCode = new Map();
 let countryByIso3 = new Map();
 let countryByName = new Map();
-const layerByCode = new Map();
+const featureIdByCode = new Map();
+let hoveredFeatureId = null;
+let mapInteractionsReady = false;
 
 const viewFlags = document.getElementById("view-flags");
 const viewMap = document.getElementById("view-map");
@@ -148,13 +150,22 @@ function colorFor(c) {
   return SCALE_COLORS[binIndex(c[colorMode], scale.bins)];
 }
 
-function styleFor(feature) {
-  const c = countryForFeature(feature);
+function featureIdForCountry(c) {
+  return String(c.iso3 || ISO3_BY_CODE[c.code] || "").toUpperCase();
+}
+
+function mapFeatureCollection() {
   return {
-    fillColor: c ? colorFor(c) : NEUTRAL_FILL,
-    fillOpacity: c ? 0.85 : 0.5,
-    color: "#0f1220",
-    weight: 0.7,
+    type: "FeatureCollection",
+    features: geoData.features.map((feature) => {
+      const c = countryForFeature(feature);
+      const id = c ? featureIdForCountry(c) : feature.id;
+      return {
+        ...feature,
+        id,
+        properties: { ...(feature.properties || {}), fillColor: c ? colorFor(c) : NEUTRAL_FILL, hasCountry: Boolean(c) },
+      };
+    }),
   };
 }
 
@@ -202,21 +213,17 @@ function tooltipContent(c) {
 }
 
 function showCountrySidebar(c) {
-  // Vorherige Auswahl zurücksetzen und das aktuell gewählte Land umranden.
-  if (selectedCountry && selectedCountry.code !== c.code) {
-    const previousLayer = layerByCode.get(selectedCountry.code);
-    if (previousLayer && geoLayer) geoLayer.resetStyle(previousLayer);
+  if (selectedCountry) {
+    const oldId = featureIdForCountry(selectedCountry);
+    if (oldId && map?.getSource("countries")) map.setFeatureState({ source: "countries", id: oldId }, { selected: false });
   }
   selectedCountry = c;
-  const selectedLayer = layerByCode.get(c.code);
-  if (selectedLayer) {
-    selectedLayer.setStyle({ color: "#ffffff", weight: 2.5, fillOpacity: 1 });
-  }
+  const id = featureIdForCountry(c);
+  if (id && map?.getSource("countries")) map.setFeatureState({ source: "countries", id }, { selected: true });
 
   const sidebar = document.getElementById("country-sidebar");
   const content = document.getElementById("sidebar-content");
   content.innerHTML = "";
-
   const img = document.createElement("img");
   img.className = "sidebar-flag";
   img.src = flagUrl(c.code, 320);
@@ -246,9 +253,8 @@ function showCountrySidebar(c) {
   sidebar.hidden = false;
   sidebar.style.display = "block";
   sidebar.setAttribute("aria-hidden", "false");
-  const mapWrap = document.querySelector(".map-wrap");
-  if (mapWrap) mapWrap.classList.add("has-sidebar");
-  if (map) requestAnimationFrame(() => map.invalidateSize({ pan: false }));
+  document.querySelector(".map-wrap")?.classList.add("has-sidebar");
+  if (map) requestAnimationFrame(() => map.resize());
 }
 
 function hideCountrySidebar() {
@@ -256,68 +262,116 @@ function hideCountrySidebar() {
   sidebar.hidden = true;
   sidebar.style.display = "none";
   sidebar.setAttribute("aria-hidden", "true");
-  const mapWrap = document.querySelector(".map-wrap");
-  if (mapWrap) mapWrap.classList.remove("has-sidebar");
+  document.querySelector(".map-wrap")?.classList.remove("has-sidebar");
   if (selectedCountry) {
-    const selectedLayer = layerByCode.get(selectedCountry.code);
-    if (selectedLayer && geoLayer) geoLayer.resetStyle(selectedLayer);
+    const id = featureIdForCountry(selectedCountry);
+    if (id && map?.getSource("countries")) map.setFeatureState({ source: "countries", id }, { selected: false });
   }
   selectedCountry = null;
-  if (map) requestAnimationFrame(() => map.invalidateSize({ pan: false }));
+  if (map) requestAnimationFrame(() => map.resize());
 }
 
-// ---------- Karte aufbauen ----------
+// ---------- MapLibre-Layer ----------
 function buildLayer() {
   rebuildLookup();
-  if (geoLayer) map.removeLayer(geoLayer);
-  layerByCode.clear();
+  featureIdByCode.clear();
+  for (const country of items) {
+    const id = featureIdForCountry(country);
+    if (id) featureIdByCode.set(country.code, id);
+  }
 
-  geoLayer = L.geoJSON(geoData, {
-    style: styleFor,
-    bubblingMouseEvents: false,
-    onEachFeature(feature, layer) {
-      const c = countryForFeature(feature);
-      if (!c) return;
-      layerByCode.set(c.code, layer);
+  const data = mapFeatureCollection();
+  if (!map.getSource("countries")) {
+    map.addSource("countries", { type: "geojson", data });
+    map.addLayer({
+      id: "countries-fill",
+      type: "fill",
+      source: "countries",
+      paint: {
+        "fill-color": ["get", "fillColor"],
+        "fill-opacity": [
+          "case",
+          ["boolean", ["feature-state", "selected"], false], 1,
+          ["boolean", ["feature-state", "hover"], false], 1,
+          ["get", "hasCountry"], 0.85,
+          0.5
+        ],
+      },
+    });
+    map.addLayer({
+      id: "countries-outline",
+      type: "line",
+      source: "countries",
+      paint: {
+        "line-color": [
+          "case",
+          ["boolean", ["feature-state", "selected"], false], "#ffffff",
+          ["boolean", ["feature-state", "hover"], false], "#ffffff",
+          "#0f1220"
+        ],
+        "line-width": [
+          "case",
+          ["boolean", ["feature-state", "selected"], false], 2.5,
+          ["boolean", ["feature-state", "hover"], false], 2,
+          0.7
+        ],
+      },
+    });
+  } else {
+    map.getSource("countries").setData(data);
+  }
 
-      // Touch-Geräte (z. B. iPad): keine Hover-Tooltips oder Layer-Verschiebungen,
-      // da diese beim ersten Tap die Länderfläche unter dem Finger verändern können.
-      if (!L.Browser.touch) {
-        layer.bindTooltip(() => tooltipContent(c), {
-          sticky: false,
-          direction: "top",
-          interactive: false,
-          className: "map-tooltip",
-        });
-        layer.on({
-          mouseover() {
-            layer.setStyle({ weight: 2, color: "#ffffff", fillOpacity: 1 });
-          },
-          mouseout() {
-            geoLayer.resetStyle(layer);
-          },
-        });
-      }
+  if (selectedCountry) {
+    const id = featureIdForCountry(selectedCountry);
+    if (id) map.setFeatureState({ source: "countries", id }, { selected: true });
+  }
 
-      // Leaflet verarbeitet einen Tap auf einem Länder-Polygon als click.
-      // Der Handler bleibt auf Touch- und Mausgeräten identisch.
-      layer.on("click", (event) => {
-        if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
-        showCountrySidebar(c);
-      });
-    },
-  }).addTo(map);
+  if (!mapInteractionsReady) {
+    map.on("click", (event) => {
+      const feature = map.queryRenderedFeatures(event.point, { layers: ["countries-fill"] })[0];
+      const country = feature && countryForFeature(feature);
+      if (country) showCountrySidebar(country);
+    });
+    map.on("mousemove", (event) => {
+      const feature = map.queryRenderedFeatures(event.point, { layers: ["countries-fill"] })[0];
+      const id = feature ? String(feature.id || "") : "";
+      map.getCanvas().style.cursor = feature ? "pointer" : "";
+      if (hoveredFeatureId && hoveredFeatureId !== id) map.setFeatureState({ source: "countries", id: hoveredFeatureId }, { hover: false });
+      hoveredFeatureId = id || null;
+      if (hoveredFeatureId) map.setFeatureState({ source: "countries", id: hoveredFeatureId }, { hover: true });
+    });
+    map.on("mouseleave", () => {
+      map.getCanvas().style.cursor = "";
+      if (hoveredFeatureId) map.setFeatureState({ source: "countries", id: hoveredFeatureId }, { hover: false });
+      hoveredFeatureId = null;
+    });
+    mapInteractionsReady = true;
+  }
 }
 
 function createMap() {
-  map = L.map("map", {
-    minZoom: 1.5,
+  map = new maplibregl.Map({
+    container: "map",
+    style: {
+      version: 8,
+      sources: {},
+      layers: [{ id: "background", type: "background", paint: { "background-color": "#0b1020" } }],
+    },
+    center: [10, 25],
+    zoom: 1.7,
+    minZoom: 1.2,
     maxZoom: 7,
-    zoomSnap: 0.5,
-    worldCopyJump: true,
-    maxBounds: [[-85, -200], [85, 200]],
-    maxBoundsViscosity: 0.8,
-  }).setView([25, 10], 2);
+    maxBounds: [[-200, -85], [200, 85]],
+    renderWorldCopies: true,
+    attributionControl: true,
+  });
+  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+  return new Promise((resolve, reject) => {
+    map.once("load", resolve);
+    map.once("error", (event) => {
+      if (!map.isStyleLoaded()) reject(event.error || new Error("MapLibre konnte nicht initialisiert werden"));
+    });
+  });
 }
 
 function fillJumpList() {
@@ -331,17 +385,28 @@ function fillJumpList() {
 }
 
 function jumpTo(name) {
-  const c = countryByName.get(normalize(name));
-  if (!c || !map) return;
-  const layer = layerByCode.get(c.code);
-  if (!layer) {
-    setMapStatus(`„${c.name}“ ist auf dieser Karte nicht als Fläche enthalten (zu klein oder fehlt in den Kartendaten).`, { warn: true });
+  const country = countryByName.get(normalize(name));
+  if (!country || !map || !geoData) return;
+  const feature = geoData.features.find((entry) => countryForFeature(entry)?.code === country.code);
+  if (!feature) {
+    setMapStatus(`„${country.name}“ ist auf dieser Karte nicht als Fläche enthalten (zu klein oder fehlt in den Kartendaten). `, { warn: true });
     setTimeout(hideMapStatus, 5000);
     return;
   }
+  const bounds = new maplibregl.LngLatBounds();
+  const extend = (coords) => {
+    if (!Array.isArray(coords)) return;
+    if (typeof coords[0] === "number" && typeof coords[1] === "number") {
+      bounds.extend(coords);
+      return;
+    }
+    coords.forEach(extend);
+  };
+  extend(feature.geometry.coordinates);
+  if (bounds.isEmpty()) return;
   hideMapStatus();
-  map.fitBounds(layer.getBounds(), { maxZoom: 5, padding: [40, 40] });
-  showCountrySidebar(c);
+  map.fitBounds(bounds, { maxZoom: 5, padding: 40, duration: 900 });
+  showCountrySidebar(country);
 }
 
 async function fetchGeoBoundaries(signal) {
@@ -424,25 +489,25 @@ async function startMap() {
   setMapStatus("Lade Karte …");
 
   try {
-    if (typeof L === "undefined") throw new Error("leaflet");
+    if (typeof maplibregl === "undefined") throw new Error("maplibre");
     await dataReady;
     if (!items.some((c) => c.iso3 || ISO3_BY_CODE[c.code])) throw new Error("no-country-codes");
     await fetchGeo();
 
-    if (!map) createMap();
+    if (!map) await createMap();
     buildLayer();
     renderLegend();
     fillJumpList();
     hideMapStatus();
-    map.invalidateSize();
+    map.resize();
   } catch (err) {
     console.warn("Karte konnte nicht geladen werden:", err);
     mapStarted = false;
     const msg =
       err.message === "no-country-codes"
         ? "Die ISO-Ländercodes für die Kartenzuordnung konnten nicht ermittelt werden."
-        : err.message === "leaflet"
-        ? "Die Kartenbibliothek (Leaflet) konnte nicht geladen werden."
+        : err.message === "maplibre"
+        ? "Die Kartenbibliothek (MapLibre GL JS) konnte nicht geladen werden."
         : "Die Karte konnte nicht geladen werden.";
     setMapStatus(msg + RETRY_BTN, { warn: true, html: true });
   }
@@ -458,7 +523,7 @@ mapStatusEl.addEventListener("click", async (e) => {
 
 mapColorEl.addEventListener("change", () => {
   colorMode = mapColorEl.value;
-  if (geoLayer) geoLayer.setStyle(styleFor);
+  if (map && map.getSource("countries")) buildLayer();
   renderLegend();
 });
 
@@ -469,11 +534,11 @@ mapJumpEl.addEventListener("keydown", (e) => {
 
 // Länderdaten wurden (neu) geladen → Karte aktualisieren
 document.addEventListener("language-changed", () => {
-  if (map && geoData) { buildLayer(); renderLegend(); fillJumpList(); }
+  if (map && geoData && map.isStyleLoaded()) { buildLayer(); renderLegend(); fillJumpList(); }
   if (selectedCountry) showCountrySidebar(selectedCountry);
 });
 document.addEventListener("countries-updated", () => {
-  if (map && geoData) {
+  if (map && geoData && map.isStyleLoaded()) {
     buildLayer();
     renderLegend();
     fillJumpList();
@@ -495,7 +560,7 @@ function showView(name, updateHash = true) {
 
   if (name === "map") {
     startMap();
-    if (map) setTimeout(() => map.invalidateSize(), 0);
+    if (map) setTimeout(() => map.resize(), 0);
   }
   if (updateHash) {
     try {
