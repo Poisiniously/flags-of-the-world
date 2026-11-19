@@ -401,16 +401,18 @@ footer a { color: var(--accent); }
 }
 
 
-/* iPad/Touch: Länderinfos direkt über der Karte anzeigen, nicht weit darunter. */
+/* Auf Touch-Geräten bleibt die Sidebar unter der Karte und verdeckt keine Länder. */
 @media (max-width: 850px) {
+  .map-wrap.has-sidebar {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .map-wrap.has-sidebar .country-sidebar {
-    position: absolute;
-    top: .75rem;
-    right: .75rem;
-    z-index: 1000;
-    width: min(320px, calc(100% - 1.5rem));
-    max-height: calc(100% - 1.5rem);
-    overflow-y: auto;
-    box-shadow: 0 8px 28px rgba(0, 0, 0, .35);
+    position: relative;
+    top: auto;
+    right: auto;
+    z-index: auto;
+    width: auto;
+    max-height: none;
+    box-shadow: none;
   }
 }
