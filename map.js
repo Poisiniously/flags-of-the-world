@@ -367,7 +367,7 @@ function popupContent(c) {
   lines.className = "popup-lines";
   const density = c.area > 0 ? c.population / c.area : 0;
   const rows = [
-    [tr("capital"), c.capital],
+    [tr("capital"), language === "en" ? (c.capitalEn || c.capital) : c.capital],
     [tr("continent"), c.continent],
     [tr("domain"), c.tld],
     [tr("area"), formatArea(c.area)],
@@ -429,7 +429,7 @@ function createMap() {
 
 function fillJumpList() {
   mapJumpList.innerHTML = "";
-  const names = items.map((c) => c.name).sort((a, b) => collator.compare(a, b));
+  const names = items.map((c) => displayName(c)).sort((a, b) => collator.compare(a, b));
   for (const n of names) {
     const opt = document.createElement("option");
     opt.value = n;
