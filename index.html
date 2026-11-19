@@ -35,7 +35,8 @@
       <div id="filters" class="chips" role="group" aria-label="Kontinent-Filter"></div>
     </section>
 
-    <p id="count" class="count" aria-live="polite"></p>
+    <div id="status" class="status" role="status" aria-live="polite" hidden></div>
+    <p class="count"><span id="count" aria-live="polite"></span> <span id="source" class="source"></span></p>
 
     <section id="grid" class="grid" aria-label="Flaggen"></section>
     <p id="empty" class="empty" hidden>Keine Treffer. Versuch einen anderen Suchbegriff oder Filter. 🔎</p>
@@ -51,7 +52,7 @@
   </div>
 
   <footer>
-    <p>Flaggen von <a href="https://flagcdn.com" target="_blank" rel="noopener">flagcdn.com</a>. Einwohner- und Flächenangaben sind gerundete Näherungswerte.</p>
+    <p>Daten von <a href="https://restcountries.com" target="_blank" rel="noopener">REST Countries</a>, Flaggen von <a href="https://flagcdn.com" target="_blank" rel="noopener">flagcdn.com</a>.</p>
   </footer>
 
   <script src="data.js"></script>

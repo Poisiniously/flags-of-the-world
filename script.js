@@ -1,3 +1,15 @@
+// =====================================================================
+// Flags of the World – Daten kommen live von der REST Countries API.
+// data.js dient nur noch als Offline-Fallback und liefert die deutschen
+// Hauptstadtnamen (die API kennt Hauptstädte nur auf Englisch).
+// =====================================================================
+
+const API_URL =
+  "https://restcountries.com/v3.1/all?fields=cca2,name,translations,capital,region,subregion,area,population,tld,independent";
+const CACHE_KEY = "flags-of-the-world:countries:v1";
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 Stunden
+const FETCH_TIMEOUT_MS = 10000;
+
 // Reihenfolge der Kontinente (für Filter und Kontinent-Sortierung)
 const CONTINENTS = ["Europa", "Asien", "Afrika", "Nordamerika", "Südamerika", "Ozeanien"];
 
@@ -7,8 +19,15 @@ const state = {
   sort: "name-asc",
 };
 
+let items = [];
+
 const collator = new Intl.Collator("de", { sensitivity: "base" });
 const nf = new Intl.NumberFormat("de-DE");
+
+// Lokale Daten (Fallback + deutsche Hauptstädte), nach Ländercode
+const LOCAL = new Map(COUNTRIES.map((c) => [c.code, c]));
+
+// ---------- Hilfsfunktionen ----------
 
 // Suchtext normalisieren: Kleinbuchstaben, ohne Akzente, ß → ss
 function normalize(str) {
@@ -20,11 +39,106 @@ function normalize(str) {
     .trim();
 }
 
-// Suchindex vorbereiten
-const items = COUNTRIES.map((c) => ({
-  ...c,
-  searchText: normalize(`${c.name} ${c.capital} ${c.code}`),
-}));
+function fallbackTld(code) {
+  return code === "gb" ? ".uk" : `.${code}`;
+}
+
+function withSearchText(c) {
+  return { ...c, searchText: normalize(`${c.name} ${c.capital} ${c.code} ${c.tld}`) };
+}
+
+// ---------- Daten laden ----------
+
+// Antwort der REST Countries API in unser Format übersetzen
+function mapApiCountry(c) {
+  const code = String(c.cca2 || "").toLowerCase();
+  if (!code) return null;
+  const local = LOCAL.get(code);
+
+  let continent;
+  switch (c.region) {
+    case "Europe": continent = "Europa"; break;
+    case "Asia": continent = "Asien"; break;
+    case "Africa": continent = "Afrika"; break;
+    case "Oceania": continent = "Ozeanien"; break;
+    case "Americas":
+      continent = c.subregion === "South America" ? "Südamerika" : "Nordamerika";
+      break;
+    default: continent = local ? local.continent : null;
+  }
+  if (!continent) return null;
+
+  return {
+    code,
+    name: (c.translations && c.translations.deu && c.translations.deu.common) ||
+          (local && local.name) || (c.name && c.name.common) || code.toUpperCase(),
+    capital: (local && local.capital) || (c.capital && c.capital[0]) || "–",
+    continent,
+    area: typeof c.area === "number" ? c.area : local ? local.area : 0,
+    population: typeof c.population === "number" ? c.population : local ? local.population : 0,
+    tld: (c.tld && c.tld[0]) || fallbackTld(code),
+  };
+}
+
+// Nur souveräne Staaten (+ Palästina als UN-Beobachterstaat)
+function parseApiResponse(data) {
+  if (!Array.isArray(data)) throw new Error("Unerwartetes Antwortformat");
+  const list = data
+    .filter((c) => c.independent !== false || String(c.cca2).toUpperCase() === "PS")
+    .map(mapApiCountry)
+    .filter(Boolean);
+  if (list.length < 150) throw new Error("Zu wenige Länder in der Antwort");
+  return list;
+}
+
+async function fetchCountries() {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(API_URL, { signal: ctrl.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return parseApiResponse(await res.json());
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function readCache() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(CACHE_KEY));
+    if (raw && Array.isArray(raw.data) && raw.data.length >= 150) return raw;
+  } catch (_) { /* Cache nicht verfügbar */ }
+  return null;
+}
+
+function writeCache(data) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ time: Date.now(), data }));
+  } catch (_) { /* z. B. privater Modus */ }
+}
+
+function offlineFallback() {
+  return COUNTRIES.map((c) => ({ ...c, tld: fallbackTld(c.code) }));
+}
+
+// Reihenfolge: frischer Cache → Live-API → alter Cache → mitgelieferte Daten
+async function loadData() {
+  const cached = readCache();
+  if (cached && Date.now() - cached.time < CACHE_TTL_MS) {
+    return { list: cached.data, source: "cache", time: cached.time };
+  }
+  try {
+    const list = await fetchCountries();
+    writeCache(list);
+    return { list, source: "live", time: Date.now() };
+  } catch (err) {
+    console.warn("Online-Abruf fehlgeschlagen:", err);
+    if (cached) return { list: cached.data, source: "stale", time: cached.time };
+    return { list: offlineFallback(), source: "offline", time: null };
+  }
+}
+
+// ---------- Sortierung & Filter ----------
 
 const SORTERS = {
   "name-asc": (a, b) => collator.compare(a.name, b.name),
@@ -58,6 +172,8 @@ function formatArea(km2) {
 const grid = document.getElementById("grid");
 const countEl = document.getElementById("count");
 const emptyEl = document.getElementById("empty");
+const statusEl = document.getElementById("status");
+const sourceEl = document.getElementById("source");
 
 function render() {
   const list = getVisible();
@@ -66,7 +182,7 @@ function render() {
     list.length === items.length
       ? `${list.length} Länder`
       : `${list.length} von ${items.length} Ländern`;
-  emptyEl.hidden = list.length > 0;
+  emptyEl.hidden = list.length > 0 || items.length === 0;
 
   grid.innerHTML = "";
   const frag = document.createDocumentFragment();
@@ -85,11 +201,15 @@ function render() {
       <div class="card-body">
         <h3></h3>
         <p class="capital"></p>
-        <span class="continent"></span>
+        <div class="tags">
+          <span class="continent"></span>
+          <span class="tld"></span>
+        </div>
       </div>`;
     card.querySelector("h3").textContent = c.name;
     card.querySelector(".capital").textContent = `Hauptstadt: ${c.capital}`;
     card.querySelector(".continent").textContent = c.continent;
+    card.querySelector(".tld").textContent = c.tld;
     frag.appendChild(card);
   }
   grid.appendChild(frag);
@@ -108,7 +228,7 @@ function renderFilters() {
     btn.type = "button";
     btn.className = "chip" + (state.continent === name ? " active" : "");
     btn.setAttribute("aria-pressed", state.continent === name);
-    btn.innerHTML = `${name}<small>${counts[name]}</small>`;
+    btn.innerHTML = `${name}<small>${counts[name] || 0}</small>`;
     btn.addEventListener("click", () => {
       state.continent = name;
       renderFilters();
@@ -117,6 +237,52 @@ function renderFilters() {
     filtersEl.appendChild(btn);
   }
 }
+
+// ---------- Status / Datenquelle ----------
+function formatTime(ts) {
+  return new Date(ts).toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" });
+}
+
+function showSource({ source, time }) {
+  const retry = '<button type="button" class="retry">Erneut versuchen</button>';
+  statusEl.className = "status";
+  statusEl.hidden = true;
+
+  if (source === "live") {
+    sourceEl.textContent = "Live-Daten von REST Countries";
+  } else if (source === "cache") {
+    sourceEl.textContent = `Daten von REST Countries (Stand ${formatTime(time)})`;
+  } else if (source === "stale") {
+    statusEl.className = "status warn";
+    statusEl.innerHTML = `Online-Abruf fehlgeschlagen – zeige gespeicherte Daten vom ${formatTime(time)}. ${retry}`;
+    statusEl.hidden = false;
+    sourceEl.textContent = "Zwischengespeicherte Daten";
+  } else {
+    statusEl.className = "status warn";
+    statusEl.innerHTML = `Online-Abruf fehlgeschlagen – zeige mitgelieferte Offline-Daten. ${retry}`;
+    statusEl.hidden = false;
+    sourceEl.textContent = "Offline-Daten";
+  }
+}
+
+async function init(forceReload = false) {
+  statusEl.className = "status";
+  statusEl.textContent = "Lade Länderdaten …";
+  statusEl.hidden = false;
+  if (forceReload) {
+    try { localStorage.removeItem(CACHE_KEY); } catch (_) {}
+  }
+
+  const result = await loadData();
+  items = result.list.map(withSearchText);
+  showSource(result);
+  renderFilters();
+  render();
+}
+
+statusEl.addEventListener("click", (e) => {
+  if (e.target.closest(".retry")) init(true);
+});
 
 // ---------- Suche & Sortierung ----------
 let searchTimer;
@@ -149,10 +315,11 @@ function openModal(code) {
   modalFlag.alt = `Flagge von ${c.name}`;
   modalTitle.textContent = c.name;
 
-  const density = c.population / c.area;
+  const density = c.area > 0 ? c.population / c.area : 0;
   const rows = [
     ["Hauptstadt", c.capital],
     ["Kontinent", c.continent],
+    ["Domain-Endung", c.tld],
     ["Fläche", formatArea(c.area)],
     ["Einwohner", `ca. ${nf.format(c.population)}`],
     ["Bevölkerungsdichte", `${nf.format(Math.round(density))} / km²`],
@@ -189,5 +356,4 @@ document.addEventListener("keydown", (e) => {
 });
 
 // ---------- Start ----------
-renderFilters();
-render();
+init();
