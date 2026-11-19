@@ -402,7 +402,15 @@ function buildLayer() {
       layerByCode.set(c.code, layer);
 
       layer.bindTooltip(() => tooltipContent(c), { sticky: true, direction: "top", className: "map-tooltip" });
-      layer.bindPopup(() => popupContent(c), {\n        minWidth: 190,\n        maxWidth: 280,\n        maxHeight: Math.min(360, Math.floor(window.innerHeight * 0.55)),\n        autoPan: true,\n        autoPanPaddingTopLeft: [24, 24],\n        autoPanPaddingBottomRight: [24, 24],\n        keepInView: true,\n      });
+      layer.bindPopup(() => popupContent(c), {
+        minWidth: 190,
+        maxWidth: 280,
+        maxHeight: Math.min(360, Math.floor(window.innerHeight * 0.55)),
+        autoPan: true,
+        autoPanPaddingTopLeft: [24, 24],
+        autoPanPaddingBottomRight: [24, 24],
+        keepInView: true,
+      });
       layer.on({
         mouseover() {
           layer.setStyle({ weight: 2, color: "#ffffff", fillOpacity: 1 });
