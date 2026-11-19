@@ -268,7 +268,7 @@ main { max-width: 1300px; margin: 0 auto; padding: 0 1rem 3rem; }
   z-index: 500;
   padding: .6rem .8rem;
   border-radius: 10px;
-  background: rgba(15, 18, 32, .85);
+  background: color-mix(in srgb, var(--surface) 92%, transparent); color:var(--text);
   backdrop-filter: blur(4px);
   font-size: .8rem;
   line-height: 1.5;
