@@ -229,6 +229,7 @@ function showCountrySidebar(c) {
   selectedCountry = c;
   const id = featureIdForCountry(c);
   if (id && map?.getSource("countries")) map.setFeatureState({ source: "countries", id }, { selected: true });
+  updateSelectedCountryOutline(c);
 
   const sidebar = document.getElementById("country-sidebar");
   const content = document.getElementById("sidebar-content");
@@ -270,6 +271,16 @@ function showCountrySidebar(c) {
   if (map) requestAnimationFrame(() => map.resize());
 }
 
+function updateSelectedCountryOutline(country) {
+  const source = map?.getSource("selected-country-outline");
+  if (!source) return;
+  const feature = country && geoData?.features.find((entry) => countryForFeature(entry)?.code === country.code);
+  source.setData({
+    type: "FeatureCollection",
+    features: feature ? [feature] : [],
+  });
+}
+
 function hideCountrySidebar() {
   const sidebar = document.getElementById("country-sidebar");
   sidebar.hidden = true;
@@ -281,6 +292,7 @@ function hideCountrySidebar() {
     if (id && map?.getSource("countries")) map.setFeatureState({ source: "countries", id }, { selected: false });
   }
   selectedCountry = null;
+  updateSelectedCountryOutline(null);
   if (map) requestAnimationFrame(() => map.resize());
 }
 
@@ -322,22 +334,20 @@ function buildLayer() {
         "line-width": 0.7,
       },
     });
+    // Separate GeoJSON source: die weiße Auswahlkontur ist damit
+    // unabhängig von MapLibre Feature-State-IDs zuverlässig sichtbar.
+    map.addSource("selected-country-outline", {
+      type: "geojson",
+      data: { type: "FeatureCollection", features: [] },
+    });
     map.addLayer({
       id: "countries-selected-outline",
       type: "line",
-      source: "countries",
+      source: "selected-country-outline",
       paint: {
         "line-color": "#ffffff",
-        "line-opacity": [
-          "case",
-          ["boolean", ["feature-state", "selected"], false], 1,
-          0
-        ],
-        "line-width": [
-          "case",
-          ["boolean", ["feature-state", "selected"], false], 2.5,
-          0
-        ],
+        "line-opacity": 1,
+        "line-width": 2.5,
       },
     });
   } else {
@@ -347,6 +357,7 @@ function buildLayer() {
   if (selectedCountry) {
     const id = featureIdForCountry(selectedCountry);
     if (id) map.setFeatureState({ source: "countries", id }, { selected: true });
+    updateSelectedCountryOutline(selectedCountry);
   }
 
   if (!mapInteractionsReady) {
