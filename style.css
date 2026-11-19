@@ -393,3 +393,38 @@ footer a { color: var(--accent); }
     animation: none;
   }
 }
+
+
+/* Autocomplete der Kartensuche */
+.map-search-wrap { position: relative; flex: 1; min-width: 0; }
+.map-search-wrap input { width: 100%; }
+.map-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  max-height: 320px;
+  overflow: auto;
+  border: 1px solid var(--surface-2);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 12px 30px rgba(0,0,0,.3);
+}
+.map-suggestions[hidden] { display: none; }
+.map-suggestion {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  width: 100%;
+  padding: .6rem .8rem;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+.map-suggestion:hover, .map-suggestion:focus-visible { background: var(--surface-2); outline: none; }
+.map-suggestion img { width: 28px; height: 19px; object-fit: cover; border-radius: 3px; }
+.map-suggestion small { margin-left: auto; color: var(--muted); }
