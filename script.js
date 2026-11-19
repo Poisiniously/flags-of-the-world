@@ -5,8 +5,8 @@
 // =====================================================================
 
 const API_URL =
-  "https://restcountries.com/v3.1/all?fields=cca2,name,translations,capital,region,subregion,area,population,tld,independent";
-const CACHE_KEY = "flags-of-the-world:countries:v1";
+  "https://restcountries.com/v3.1/all?fields=cca2,cca3,translations,capital,region,subregion,area,population,tld,independent";
+const CACHE_KEY = "flags-of-the-world:countries:v2";
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 Stunden
 const FETCH_TIMEOUT_MS = 10000;
 
@@ -70,8 +70,9 @@ function mapApiCountry(c) {
 
   return {
     code,
+    iso3: c.cca3 || null, // wird für die Zuordnung zur Weltkarte gebraucht
     name: (c.translations && c.translations.deu && c.translations.deu.common) ||
-          (local && local.name) || (c.name && c.name.common) || code.toUpperCase(),
+          (local && local.name) || code.toUpperCase(),
     capital: (local && local.capital) || (c.capital && c.capital[0]) || "–",
     continent,
     area: typeof c.area === "number" ? c.area : local ? local.area : 0,
@@ -278,6 +279,8 @@ async function init(forceReload = false) {
   showSource(result);
   renderFilters();
   render();
+  // Andere Ansichten (z. B. die Karte) können sich damit aktualisieren
+  document.dispatchEvent(new CustomEvent("countries-updated"));
 }
 
 statusEl.addEventListener("click", (e) => {
@@ -356,4 +359,5 @@ document.addEventListener("keydown", (e) => {
 });
 
 // ---------- Start ----------
-init();
+// dataReady: Promise, auf den die Karte warten kann, bis die Länderdaten da sind
+const dataReady = init();

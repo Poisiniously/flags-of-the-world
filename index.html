@@ -4,7 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Flags of the World – Alle Flaggen, Länder & Hauptstädte</title>
-  <meta name="description" content="Alle Flaggen der Welt mit Ländernamen und Hauptstädten – durchsuchbar, filterbar und sortierbar." />
+  <meta name="description" content="Alle Flaggen der Welt mit Ländernamen und Hauptstädten – durchsuchbar, filterbar und sortierbar, dazu eine interaktive Weltkarte." />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -13,33 +15,67 @@
     <p class="subtitle">Alle Flaggen der Welt mit Ländernamen und Hauptstädten</p>
   </header>
 
+  <nav class="tabs" role="tablist" aria-label="Ansicht">
+    <button class="tab active" id="tab-flags" role="tab" aria-selected="true" aria-controls="view-flags" data-view="flags">🏳️ Flaggen</button>
+    <button class="tab" id="tab-map" role="tab" aria-selected="false" aria-controls="view-map" data-view="map">🗺️ Karte</button>
+  </nav>
+
   <main>
-    <section class="controls" aria-label="Suche, Filter und Sortierung">
-      <div class="search-wrap">
-        <input id="search" type="search" placeholder="Land oder Hauptstadt suchen …" autocomplete="off" aria-label="Suche" />
+    <!-- ========== Ansicht: Flaggen ========== -->
+    <div id="view-flags" role="tabpanel" aria-labelledby="tab-flags">
+      <section class="controls" aria-label="Suche, Filter und Sortierung">
+        <div class="search-wrap">
+          <input id="search" type="search" placeholder="Land, Hauptstadt oder Domain-Endung suchen …" autocomplete="off" aria-label="Suche" />
+        </div>
+
+        <div class="sort-wrap">
+          <label for="sort">Sortieren nach</label>
+          <select id="sort">
+            <option value="name-asc">Alphabet (A–Z)</option>
+            <option value="name-desc">Alphabet (Z–A)</option>
+            <option value="continent">Kontinent</option>
+            <option value="area-desc">Größe (größte zuerst)</option>
+            <option value="area-asc">Größe (kleinste zuerst)</option>
+            <option value="pop-desc">Einwohner (meiste zuerst)</option>
+            <option value="pop-asc">Einwohner (wenigste zuerst)</option>
+          </select>
+        </div>
+
+        <div id="filters" class="chips" role="group" aria-label="Kontinent-Filter"></div>
+      </section>
+
+      <div id="status" class="status" role="status" aria-live="polite" hidden></div>
+      <p class="count"><span id="count" aria-live="polite"></span> <span id="source" class="source"></span></p>
+
+      <section id="grid" class="grid" aria-label="Flaggen"></section>
+      <p id="empty" class="empty" hidden>Keine Treffer. Versuch einen anderen Suchbegriff oder Filter. 🔎</p>
+    </div>
+
+    <!-- ========== Ansicht: Karte ========== -->
+    <div id="view-map" role="tabpanel" aria-labelledby="tab-map" hidden>
+      <section class="map-toolbar" aria-label="Karten-Einstellungen">
+        <div class="map-field">
+          <label for="map-color">Einfärben nach</label>
+          <select id="map-color">
+            <option value="continent">Kontinent</option>
+            <option value="population">Einwohnerzahl</option>
+            <option value="area">Fläche</option>
+          </select>
+        </div>
+        <div class="map-field map-field-grow">
+          <label for="map-jump">Zu Land springen</label>
+          <input id="map-jump" type="search" list="map-jump-list" placeholder="Landesnamen eingeben …" autocomplete="off" />
+          <datalist id="map-jump-list"></datalist>
+        </div>
+      </section>
+
+      <div id="map-status" class="status" role="status" aria-live="polite" hidden></div>
+      <div class="map-wrap">
+        <div id="map" aria-label="Interaktive Weltkarte"></div>
+        <div id="map-legend" class="map-legend" aria-label="Legende"></div>
       </div>
-
-      <div class="sort-wrap">
-        <label for="sort">Sortieren nach</label>
-        <select id="sort">
-          <option value="name-asc">Alphabet (A–Z)</option>
-          <option value="name-desc">Alphabet (Z–A)</option>
-          <option value="continent">Kontinent</option>
-          <option value="area-desc">Größe (größte zuerst)</option>
-          <option value="area-asc">Größe (kleinste zuerst)</option>
-          <option value="pop-desc">Einwohner (meiste zuerst)</option>
-          <option value="pop-asc">Einwohner (wenigste zuerst)</option>
-        </select>
-      </div>
-
-      <div id="filters" class="chips" role="group" aria-label="Kontinent-Filter"></div>
-    </section>
-
-    <div id="status" class="status" role="status" aria-live="polite" hidden></div>
-    <p class="count"><span id="count" aria-live="polite"></span> <span id="source" class="source"></span></p>
-
-    <section id="grid" class="grid" aria-label="Flaggen"></section>
-    <p id="empty" class="empty" hidden>Keine Treffer. Versuch einen anderen Suchbegriff oder Filter. 🔎</p>
+      <p class="map-hint">Klicke auf ein Land für Flagge und Infos. Mit Mausrad oder Pinch zoomen, mit gedrückter Maustaste verschieben.</p>
+    </div>
   </main>
 
   <div id="modal" class="modal" hidden>
@@ -52,10 +88,18 @@
   </div>
 
   <footer>
-    <p>Daten von <a href="https://restcountries.com" target="_blank" rel="noopener">REST Countries</a>, Flaggen von <a href="https://flagcdn.com" target="_blank" rel="noopener">flagcdn.com</a>.</p>
+    <p>
+      Daten von <a href="https://restcountries.com" target="_blank" rel="noopener">REST Countries</a>,
+      Flaggen von <a href="https://flagcdn.com" target="_blank" rel="noopener">flagcdn.com</a>,
+      Karte mit <a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a> und
+      Grenzen von <a href="https://github.com/johan/world.geo.json" target="_blank" rel="noopener">world.geo.json</a>.
+    </p>
   </footer>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="data.js"></script>
   <script src="script.js"></script>
+  <script src="map.js"></script>
 </body>
 </html>

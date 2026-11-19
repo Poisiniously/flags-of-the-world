@@ -9,7 +9,11 @@ Website mit den Flaggen aller 197 Länder inkl. Ländernamen, Hauptstädten und 
 - **Kontinent-Filter**: Europa, Asien, Afrika, Nordamerika, Südamerika, Ozeanien
 - **Sortierung**: Alphabet (A–Z / Z–A), Kontinent, Größe, Einwohnerzahl (jeweils auf- und absteigend)
 - **Detailansicht** per Klick: Fläche, Einwohner, Bevölkerungsdichte, Domain-Endung
-- Responsive, Dark Theme, keine Abhängigkeiten, kein Build-Schritt
+- **Interaktive Weltkarte** (Reiter „Karte", auch direkt über `#karte` aufrufbar):
+  - Länder einfärben nach Kontinent, Einwohnerzahl oder Fläche, mit Legende
+  - Hover zeigt Flagge und Namen, Klick öffnet ein Popup mit Infos und „Mehr Details"
+  - „Zu Land springen" zoomt auf ein Land
+- Responsive, Dark Theme, kein Build-Schritt (Leaflet wird per CDN geladen)
 
 ## Wie die Daten geladen werden
 
@@ -36,6 +40,7 @@ Für GitHub Pages: unter *Settings → Pages* den Branch `main` mit Ordner `/ (r
 | `index.html` | Seitenstruktur |
 | `style.css` | Design |
 | `script.js` | Datenabruf, Cache, Suche, Filter, Sortierung, Detailansicht |
+| `map.js` | Reiter-Navigation und interaktive Weltkarte (Leaflet) |
 | `data.js` | Offline-Fallback und deutsche Hauptstadtnamen (die API liefert Hauptstädte nur auf Englisch) |
 
 ## Hinweise zu den Daten
@@ -44,3 +49,4 @@ Für GitHub Pages: unter *Settings → Pages* den Branch `main` mit Ordner `/ (r
 - Nordamerika enthält Mittelamerika und die Karibik
 - Die Kontinente richten sich nach der Einteilung der API (z. B. Russland und Zypern in Europa, Türkei und Kaukasus-Staaten in Asien)
 - Flaggen werden von [flagcdn.com](https://flagcdn.com) geladen
+- Die Ländergrenzen der Karte kommen aus [world.geo.json](https://github.com/johan/world.geo.json) (über jsDelivr). Sehr kleine Staaten wie Vatikanstadt oder Monaco sind dort nicht als Fläche enthalten und erscheinen daher nicht auf der Karte. Die Karte braucht außerdem die Live-Länderdaten der API, mit den Offline-Daten bleibt sie leer.
