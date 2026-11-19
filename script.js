@@ -81,7 +81,8 @@ function fallbackTld(code) {
 }
 
 function withSearchText(c) {
-  return { ...c, searchText: normalize(`${c.name} ${c.capital} ${c.code} ${c.tld}`) };
+  const englishName = new Intl.DisplayNames(["en"], { type: "region" }).of(c.code.toUpperCase()) || c.name;
+  return { ...c, searchText: normalize(`${c.name} ${englishName} ${c.capital} ${c.capitalEn || ""} ${c.code} ${c.tld}`) };
 }
 
 // ---------- Daten laden ----------
@@ -110,7 +111,8 @@ function mapApiCountry(c) {
     iso3: c.cca3 || null, // wird für die Zuordnung zur Weltkarte gebraucht
     name: (c.translations && c.translations.deu && c.translations.deu.common) ||
           (local && local.name) || code.toUpperCase(),
-    capital: (local && local.capital) || (c.capital && c.capital[0]) || "–",\n    capitalEn: (c.capital && c.capital[0]) || (local && local.capital) || "–",
+    capital: (local && local.capital) || (c.capital && c.capital[0]) || "–",
+    capitalEn: (c.capital && c.capital[0]) || (local && local.capital) || "–",
     continent,
     area: typeof c.area === "number" ? c.area : local ? local.area : 0,
     population: typeof c.population === "number" ? c.population : local ? local.population : 0,
