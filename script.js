@@ -1,12 +1,12 @@
 // =====================================================================
-// Flags of the World – Daten kommen live von der REST Countries API.
+// Flags of the World – Daten kommen live von der countries.dev API.
 // data.js dient nur noch als Offline-Fallback und liefert die deutschen
 // Hauptstadtnamen (die API kennt Hauptstädte nur auf Englisch).
 // =====================================================================
 
 const API_URL =
-  "https://restcountries.com/v3.1/all?fields=cca2,cca3,translations,capital,region,subregion,area,population,tld,independent";
-const CACHE_KEY = "flags-of-the-world:countries:v2";
+  "https://countries.dev/countries?fields=name,alpha2Code,alpha3Code,capital,region,subregion,area,population,topLevelDomain,independent";
+const CACHE_KEY = "flags-of-the-world:countries:v3";
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 Stunden
 const FETCH_TIMEOUT_MS = 10000;
 
@@ -88,9 +88,9 @@ function withSearchText(c) {
 
 // ---------- Daten laden ----------
 
-// Antwort der REST Countries API in unser Format übersetzen
+// Antwort der countries.dev API in unser Format übersetzen
 function mapApiCountry(c) {
-  const code = String(c.cca2 || "").toLowerCase();
+  const code = String(c.alpha2Code || "").toLowerCase();
   if (!code) return null;
   const local = LOCAL.get(code);
 
@@ -109,15 +109,14 @@ function mapApiCountry(c) {
 
   return {
     code,
-    iso3: c.cca3 || null, // wird für die Zuordnung zur Weltkarte gebraucht
-    name: (c.translations && c.translations.deu && c.translations.deu.common) ||
-          (local && local.name) || code.toUpperCase(),
+    iso3: c.alpha3Code || null, // wird für die Zuordnung zur Weltkarte gebraucht
+    name: (local && local.name) || c.name || code.toUpperCase(),
     capital: (local && local.capital) || (c.capital && c.capital[0]) || "–",
     capitalEn: (c.capital && c.capital[0]) || (local && local.capital) || "–",
     continent,
     area: typeof c.area === "number" ? c.area : local ? local.area : 0,
     population: typeof c.population === "number" ? c.population : local ? local.population : 0,
-    tld: (c.tld && c.tld[0]) || fallbackTld(code),
+    tld: (c.topLevelDomain && c.topLevelDomain[0]) || fallbackTld(code),
   };
 }
 
@@ -290,9 +289,9 @@ function showSource({ source, time }) {
   statusEl.hidden = true;
 
   if (source === "live") {
-    sourceEl.textContent = "Live-Daten von REST Countries";
+    sourceEl.textContent = "Live-Daten von countries.dev";
   } else if (source === "cache") {
-    sourceEl.textContent = `Daten von REST Countries (Stand ${formatTime(time)})`;
+    sourceEl.textContent = `Daten von countries.dev (Stand ${formatTime(time)})`;
   } else if (source === "stale") {
     statusEl.className = "status warn";
     statusEl.innerHTML = `Online-Abruf fehlgeschlagen – zeige gespeicherte Daten vom ${formatTime(time)}. ${retry}`;
