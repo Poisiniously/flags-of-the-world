@@ -64,8 +64,10 @@
         </div>
         <div class="map-field map-field-grow">
           <label for="map-jump">Zu Land springen</label>
-          <input id="map-jump" type="search" list="map-jump-list" placeholder="Landesnamen eingeben …" autocomplete="off" />
-          <datalist id="map-jump-list"></datalist>
+          <div class="map-search-wrap">
+            <input id="map-jump" type="search" placeholder="Land, Hauptstadt oder Code suchen …" autocomplete="off" aria-controls="map-jump-suggestions" aria-expanded="false" />
+            <div id="map-jump-suggestions" class="map-suggestions" role="listbox" hidden></div>
+          </div>
         </div>
       </section>
 
