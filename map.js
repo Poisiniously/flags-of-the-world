@@ -356,6 +356,7 @@ function tooltipContent(c) {
 }
 
 function showCountrySidebar(c) {
+  selectedCountry = c;
   const sidebar = document.getElementById("country-sidebar");
   const content = document.getElementById("sidebar-content");
   content.innerHTML = "";
@@ -387,10 +388,17 @@ function showCountrySidebar(c) {
   }
   content.append(img, title, info);
   sidebar.hidden = false;
+  const mapWrap = document.querySelector(".map-wrap");
+  if (mapWrap) mapWrap.classList.add("has-sidebar");
+  if (map) requestAnimationFrame(() => map.invalidateSize({ pan: false }));
 }
 
 function hideCountrySidebar() {
   document.getElementById("country-sidebar").hidden = true;
+  const mapWrap = document.querySelector(".map-wrap");
+  if (mapWrap) mapWrap.classList.remove("has-sidebar");
+  selectedCountry = null;
+  if (map) requestAnimationFrame(() => map.invalidateSize({ pan: false }));
 }
 
 // ---------- Karte aufbauen ----------
