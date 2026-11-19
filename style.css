@@ -287,6 +287,7 @@ main { max-width: 1300px; margin: 0 auto; padding: 0 1rem 3rem; }
 }
 .leaflet-container a.leaflet-popup-close-button { color: var(--muted); }
 .leaflet-tooltip.map-tooltip {
+  pointer-events: none !important;
   background: var(--surface);
   color: var(--text);
   border: 1px solid var(--surface-2);
