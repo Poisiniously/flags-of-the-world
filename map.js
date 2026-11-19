@@ -233,6 +233,10 @@ function showCountrySidebar(c) {
   const sidebar = document.getElementById("country-sidebar");
   const content = document.getElementById("sidebar-content");
   content.innerHTML = "";
+  // Beim Länderwechsel den Inhalt kurz weich einblenden.
+  content.classList.remove("country-switch");
+  void content.offsetWidth;
+  content.classList.add("country-switch");
   const img = document.createElement("img");
   img.className = "sidebar-flag";
   img.src = flagUrl(c.code, 320);
@@ -312,17 +316,29 @@ function buildLayer() {
       type: "line",
       source: "countries",
       paint: {
-        "line-color": [
+        // Sichtbare Ländergrenzen unabhängig vom Auswahlzustand.
+        "line-color": "#8994bd",
+        "line-opacity": 0.75,
+        "line-width": 0.8,
+      },
+    });
+    map.addLayer({
+      id: "countries-selected-outline",
+      type: "line",
+      source: "countries",
+      paint: {
+        "line-color": "#ffffff",
+        "line-opacity": [
           "case",
-          ["boolean", ["feature-state", "selected"], false], "#ffffff",
-          ["boolean", ["feature-state", "hover"], false], "#ffffff",
-          "#0f1220"
+          ["boolean", ["feature-state", "selected"], false], 1,
+          ["boolean", ["feature-state", "hover"], false], 0.95,
+          0
         ],
         "line-width": [
           "case",
-          ["boolean", ["feature-state", "selected"], false], 2.5,
-          ["boolean", ["feature-state", "hover"], false], 2,
-          0.7
+          ["boolean", ["feature-state", "selected"], false], 2.8,
+          ["boolean", ["feature-state", "hover"], false], 1.8,
+          0
         ],
       },
     });
