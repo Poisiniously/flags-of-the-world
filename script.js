@@ -13,6 +13,36 @@ const FETCH_TIMEOUT_MS = 10000;
 // Reihenfolge der Kontinente (für Filter und Kontinent-Sortierung)
 const CONTINENTS = ["Europa", "Asien", "Afrika", "Nordamerika", "Südamerika", "Ozeanien"];
 
+
+let language = localStorage.getItem("fotw-language") || "de";
+const I18N = {
+  de: { capital:"Hauptstadt", continent:"Kontinent", domain:"Domain-Endung", area:"Fläche", population:"Einwohner", density:"Bevölkerungsdichte", code:"Ländercode", details:"Mehr Details", countries:"Länder", of:"von", all:"Alle", noResults:"Keine Treffer. Versuch einen anderen Suchbegriff oder Filter. 🔎", search:"Land, Hauptstadt oder Domain-Endung suchen …", hint:"Klicke auf ein Land für Flagge und Infos. Mit Mausrad oder Pinch zoomen, mit gedrückter Maustaste verschieben." },
+  en: { capital:"Capital", continent:"Continent", domain:"Domain suffix", area:"Area", population:"Population", density:"Population density", code:"Country code", details:"More details", countries:"countries", of:"of", all:"All", noResults:"No results. Try another search term or filter. 🔎", search:"Search country, capital or domain suffix …", hint:"Click a country to see its flag and information. Zoom with the wheel or pinch; drag to move." }
+};
+const tr = key => I18N[language][key] || key;
+function displayName(c) { return language === "en" ? (new Intl.DisplayNames(["en"], {type:"region"}).of(c.code.toUpperCase()) || c.name) : c.name; }
+function applyPreferences() {
+  document.documentElement.lang = language;
+  document.getElementById("search").placeholder = tr("search");
+  document.getElementById("empty").textContent = tr("noResults");
+  document.querySelector(".map-hint").textContent = tr("hint");
+  document.getElementById("language-toggle").textContent = language === "de" ? "DE / EN" : "EN / DE";
+  render(); renderFilters();
+  document.dispatchEvent(new CustomEvent("language-changed"));
+}
+document.getElementById("language-toggle").addEventListener("click", () => {
+  language = language === "de" ? "en" : "de";
+  localStorage.setItem("fotw-language", language);
+  applyPreferences();
+});
+function setTheme(value) {
+  document.documentElement.dataset.theme = value;
+  document.getElementById("theme-toggle").textContent = value === "dark" ? "☀️ Light" : "🌙 Dark";
+  localStorage.setItem("fotw-theme", value);
+}
+setTheme(localStorage.getItem("fotw-theme") || "dark");
+document.getElementById("theme-toggle").addEventListener("click", () => setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark"));
+
 const state = {
   query: "",
   continent: "Alle",
@@ -181,8 +211,8 @@ function render() {
 
   countEl.textContent =
     list.length === items.length
-      ? `${list.length} Länder`
-      : `${list.length} von ${items.length} Ländern`;
+      ? `${list.length} ${tr("countries")}`
+      : `${list.length} ${tr("of")} ${items.length} ${tr("countries")}`;
   emptyEl.hidden = list.length > 0 || items.length === 0;
 
   grid.innerHTML = "";
@@ -207,7 +237,7 @@ function render() {
           <span class="tld"></span>
         </div>
       </div>`;
-    card.querySelector("h3").textContent = c.name;
+    card.querySelector("h3").textContent = displayName(c);
     card.querySelector(".capital").textContent = `Hauptstadt: ${c.capital}`;
     card.querySelector(".continent").textContent = c.continent;
     card.querySelector(".tld").textContent = c.tld;
@@ -229,7 +259,7 @@ function renderFilters() {
     btn.type = "button";
     btn.className = "chip" + (state.continent === name ? " active" : "");
     btn.setAttribute("aria-pressed", state.continent === name);
-    btn.innerHTML = `${name}<small>${counts[name] || 0}</small>`;
+    btn.innerHTML = `${name === "Alle" ? tr("all") : name}<small>${counts[name] || 0}</small>`;
     btn.addEventListener("click", () => {
       state.continent = name;
       renderFilters();
@@ -316,17 +346,17 @@ function openModal(code) {
 
   modalFlag.src = flagUrl(c.code, 640);
   modalFlag.alt = `Flagge von ${c.name}`;
-  modalTitle.textContent = c.name;
+  modalTitle.textContent = displayName(c);
 
   const density = c.area > 0 ? c.population / c.area : 0;
   const rows = [
-    ["Hauptstadt", c.capital],
-    ["Kontinent", c.continent],
-    ["Domain-Endung", c.tld],
-    ["Fläche", formatArea(c.area)],
-    ["Einwohner", `ca. ${nf.format(c.population)}`],
-    ["Bevölkerungsdichte", `${nf.format(Math.round(density))} / km²`],
-    ["Ländercode", c.code.toUpperCase()],
+    [tr("capital"), c.capital],
+    [tr("continent"), c.continent],
+    [tr("domain"), c.tld],
+    [tr("area"), formatArea(c.area)],
+    [tr("population"), `${language === "de" ? "ca. " : "approx. "}${nf.format(c.population)}`],
+    [tr("density"), `${nf.format(Math.round(density))} / km²`],
+    [tr("code"), c.code.toUpperCase()],
   ];
   modalInfo.innerHTML = "";
   for (const [k, v] of rows) {
@@ -361,3 +391,25 @@ document.addEventListener("keydown", (e) => {
 // ---------- Start ----------
 // dataReady: Promise, auf den die Karte warten kann, bis die Länderdaten da sind
 const dataReady = init();
+const suggestionBox = document.getElementById("search-suggestions");
+const searchInput = document.getElementById("search");
+function updateSuggestions() {
+  const q = normalize(searchInput.value);
+  suggestionBox.innerHTML = "";
+  if (!q) { suggestionBox.hidden = true; searchInput.setAttribute("aria-expanded","false"); return; }
+  const matches = items.filter(c => normalize(c.name + " " + displayName(c) + " " + c.capital + " " + c.code + " " + c.tld).includes(q)).slice(0,7);
+  for (const c of matches) {
+    const b = document.createElement("button"); b.type = "button"; b.className = "suggestion"; b.setAttribute("role","option");
+    const img = document.createElement("img"); img.src = flagUrl(c.code,80); img.alt = "";
+    const name = document.createElement("span"); name.textContent = displayName(c);
+    const capital = document.createElement("small"); capital.textContent = c.capital;
+    b.append(img,name,capital);
+    b.addEventListener("click", () => { searchInput.value = displayName(c); state.query = normalize(c.name); state.continent = "Alle"; suggestionBox.hidden = true; renderFilters(); render(); });
+    suggestionBox.appendChild(b);
+  }
+  suggestionBox.hidden = matches.length === 0;
+  searchInput.setAttribute("aria-expanded", matches.length ? "true" : "false");
+}
+searchInput.addEventListener("input", updateSuggestions);
+document.addEventListener("click", e => { if (!e.target.closest(".search-wrap")) suggestionBox.hidden = true; });
+applyPreferences();
