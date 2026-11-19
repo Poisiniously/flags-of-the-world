@@ -7,10 +7,8 @@ import * as maplibregl from "https://unpkg.com/maplibre-gl@6.19.0/dist/maplibre-
 // MapLibre GL JS rendert die GeoJSON-Polygone per WebGL.
 // =====================================================================
 
-const GEOBOUNDARIES_API_URL = "https://www.geoboundaries.org/api/current/gbOpen/ALL/ADM0/";
-const GEOJSON_FALLBACK_URL = "https://cdn.jsdelivr.net/gh/johan/world.geo.json@master/countries.geo.json";
-const GEO_TIMEOUT_MS = 45000;
-const GEO_CONCURRENCY = 12;
+// Eine einzige, stark vereinfachte GeoJSON-Datei statt ~180 Einzel-Requests.
+const GEOJSON_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson";
 
 const CONTINENT_COLORS = {
   Europa: "#6c8cff",
@@ -409,78 +407,39 @@ function jumpTo(name) {
   showCountrySidebar(country);
 }
 
-async function fetchGeoBoundaries(signal) {
-  const response = await fetch(GEOBOUNDARIES_API_URL, { signal });
-  if (!response.ok) throw new Error(`geoBoundaries API: HTTP ${response.status}`);
-  const boundaries = await response.json();
-  if (!Array.isArray(boundaries)) throw new Error("Ungültige geoBoundaries-Antwort");
-
-  const countries = boundaries.filter((entry) =>
-    entry.boundaryType === "ADM0" &&
-    /^[A-Z]{3}$/.test(entry.boundaryISO || "") &&
-    (entry.simplifiedGeometryGeoJSON || entry.gjDownloadURL)
-  );
-  if (countries.length < 150) throw new Error("Zu wenige Ländergrenzen von geoBoundaries");
-
-  const features = [];
-  let nextIndex = 0;
-  const workers = Array.from({ length: Math.min(GEO_CONCURRENCY, countries.length) }, async () => {
-    while (nextIndex < countries.length) {
-      const entry = countries[nextIndex++];
-      const url = entry.simplifiedGeometryGeoJSON || entry.gjDownloadURL;
-      try {
-        const response = await fetch(url, { signal });
-        if (!response.ok) continue;
-        const geometry = await response.json();
-        if (!geometry || !Array.isArray(geometry.features)) continue;
-
-        for (const feature of geometry.features) {
-          if (!feature || !feature.geometry) continue;
-          features.push({
-            ...feature,
-            id: entry.boundaryISO,
-            properties: {
-              ...(feature.properties || {}),
-              name: entry.boundaryName || (feature.properties && feature.properties.shapeName) || entry.boundaryISO,
-              boundaryISO: entry.boundaryISO,
-            },
-          });
-        }
-      } catch (error) {
-        if (signal.aborted) throw error;
-        // Einzelne Länderdateien können fehlen; die übrigen Grenzen bleiben nutzbar.
-      }
-    }
-  });
-
-  await Promise.all(workers);
-  if (features.length < 150) throw new Error("Zu wenige Ländergrenzen konnten geladen werden");
-  return { type: "FeatureCollection", features };
-}
-
 async function fetchGeo() {
   if (geoData) return geoData;
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), GEO_TIMEOUT_MS);
-  try {
-    try {
-      geoData = await fetchGeoBoundaries(ctrl.signal);
-      console.info(`geoBoundaries: ${geoData.features.length} Ländergrenzen geladen`);
-    } catch (error) {
-      if (ctrl.signal.aborted) throw error;
-      console.warn("geoBoundaries konnte nicht geladen werden; nutze Ersatz-Kartendaten:", error);
-      const response = await fetch(GEOJSON_FALLBACK_URL, { signal: ctrl.signal });
-      if (!response.ok) throw new Error(`Karten-Fallback: HTTP ${response.status}`);
-      const fallback = await response.json();
-      if (!fallback || fallback.type !== "FeatureCollection" || !Array.isArray(fallback.features)) {
-        throw new Error("Unerwartetes Kartenformat");
-      }
-      geoData = fallback;
-    }
-    return geoData;
-  } finally {
-    clearTimeout(timer);
+
+  const response = await fetch(GEOJSON_URL, { cache: "force-cache" });
+  if (!response.ok) throw new Error(`Kartendaten: HTTP ${response.status}`);
+
+  const raw = await response.json();
+  if (!raw || raw.type !== "FeatureCollection" || !Array.isArray(raw.features)) {
+    throw new Error("Ungültiges GeoJSON-Format");
   }
+
+  const features = raw.features
+    .filter((feature) => feature && feature.geometry)
+    .map((feature) => {
+      const properties = feature.properties || {};
+      const iso3 = String(
+        properties.ADM0_A3 || properties.ISO_A3_EH || properties.ISO_A3 || ""
+      ).toUpperCase();
+
+      return {
+        ...feature,
+        id: /^[A-Z]{3}$/.test(iso3) ? iso3 : undefined,
+        properties: {
+          ...properties,
+          name: properties.ADMIN || properties.NAME || properties.NAME_EN || iso3,
+        },
+      };
+    });
+
+  if (features.length < 150) throw new Error("Zu wenige Ländergrenzen geladen");
+  geoData = { type: "FeatureCollection", features };
+  console.info(`Natural Earth: ${features.length} Ländergrenzen geladen`);
+  return geoData;
 }
 
 async function startMap() {
