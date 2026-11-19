@@ -3,7 +3,7 @@ import * as maplibregl from "https://unpkg.com/maplibre-gl@6.19.0/dist/maplibre-
 // =====================================================================
 // Reiter-Navigation + interaktive Weltkarte (MapLibre GL JS)
 //
-// Ländergrenzen von geoBoundaries, mit world.geo.json als Fallback.
+// Ländergrenzen aus einer einzelnen, vereinfachten Natural-Earth-Datei.
 // MapLibre GL JS rendert die GeoJSON-Polygone per WebGL.
 // =====================================================================
 
@@ -449,11 +449,10 @@ async function startMap() {
 
   try {
     if (typeof maplibregl === "undefined") throw new Error("maplibre");
-    await dataReady;
-    if (!items.some((c) => c.iso3 || ISO3_BY_CODE[c.code])) throw new Error("no-country-codes");
-    await fetchGeo();
-
+    // Die Karte sofort initialisieren; Länder- und Geodaten parallel laden.
     if (!map) await createMap();
+    await Promise.all([dataReady, fetchGeo()]);
+    if (!items.some((c) => c.iso3 || ISO3_BY_CODE[c.code])) throw new Error("no-country-codes");
     buildLayer();
     renderLegend();
     fillJumpList();
@@ -468,7 +467,8 @@ async function startMap() {
         : err.message === "maplibre"
         ? "Die Kartenbibliothek (MapLibre GL JS) konnte nicht geladen werden."
         : "Die Karte konnte nicht geladen werden.";
-    setMapStatus(msg + RETRY_BTN, { warn: true, html: true });
+    const detail = err && err.message ? ` (${err.message})` : "";
+    setMapStatus(msg + detail + RETRY_BTN, { warn: true, html: true });
   }
 }
 
