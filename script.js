@@ -378,11 +378,13 @@ function openModal(code) {
   }
 
   modal.hidden = false;
+  document.body.classList.add("modal-open");
   document.getElementById("modal-close").focus();
 }
 
 function closeModal() {
   modal.hidden = true;
+  document.body.classList.remove("modal-open");
   if (lastFocus) lastFocus.focus();
 }
 
