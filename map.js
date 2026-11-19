@@ -355,14 +355,25 @@ function createMap() {
       sources: {},
       layers: [{ id: "background", type: "background", paint: { "background-color": "#0b1020" } }],
     },
-    center: [10, 25],
-    zoom: 1.7,
-    minZoom: 1.2,
+    // Weltansicht automatisch an den verfügbaren Kartenbereich anpassen.
+    bounds: [[-180, -80], [180, 80]],
+    fitBoundsOptions: { padding: 24, maxZoom: 1.4 },
+    minZoom: 0,
     maxZoom: 7,
-    maxBounds: [[-200, -85], [200, 85]],
-    renderWorldCopies: true,
+    maxBounds: [[-180, -85], [180, 85]],
+    renderWorldCopies: false,
+    // Eine flache, nordausgerichtete Karte: keine Rotation oder Neigung.
+    bearing: 0,
+    pitch: 0,
+    maxPitch: 0,
+    dragRotate: false,
+    pitchWithRotate: false,
+    touchPitch: false,
+    touchZoomRotate: true,
     attributionControl: true,
   });
+  // Touch-Pinch darf zoomen, aber nicht die Karte drehen.
+  map.touchZoomRotate.disableRotation();
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
   return new Promise((resolve, reject) => {
     map.once("load", resolve);
