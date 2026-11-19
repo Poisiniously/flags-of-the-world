@@ -42,27 +42,6 @@ If loading fails, the page displays an error message with a retry button.
 
 The interactive map also downloads its GeoJSON boundary data when the map tab is opened. It requires the map data and country data to be available.
 
-## Run locally
-
-Because the application loads data and map resources online, it is best opened through a local web server instead of directly as a `file://` page.
-
-With Python installed, run this command in the project directory:
-
-```bash
-python -m http.server 8000
-```
-
-Then open [http://localhost:8000](http://localhost:8000) in your browser.
-
-## GitHub Pages
-
-To publish the project with GitHub Pages:
-
-1. Open the repository's **Settings**.
-2. Go to **Pages**.
-3. Select the `main` branch and the `/(root)` folder as the deployment source.
-4. Save the settings.
-
 ## Project structure
 
 | File | Description |
