@@ -316,10 +316,10 @@ function buildLayer() {
       type: "line",
       source: "countries",
       paint: {
-        // Sichtbare Ländergrenzen unabhängig vom Auswahlzustand.
-        "line-color": "#8994bd",
-        "line-opacity": 0.75,
-        "line-width": 0.8,
+        // Ursprüngliche, dezente Ländergrenzen.
+        "line-color": "#0f1220",
+        "line-opacity": 1,
+        "line-width": 0.7,
       },
     });
     map.addLayer({
@@ -331,13 +331,11 @@ function buildLayer() {
         "line-opacity": [
           "case",
           ["boolean", ["feature-state", "selected"], false], 1,
-          ["boolean", ["feature-state", "hover"], false], 0.95,
           0
         ],
         "line-width": [
           "case",
-          ["boolean", ["feature-state", "selected"], false], 2.8,
-          ["boolean", ["feature-state", "hover"], false], 1.8,
+          ["boolean", ["feature-state", "selected"], false], 2.5,
           0
         ],
       },
