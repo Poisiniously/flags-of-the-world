@@ -368,7 +368,7 @@ function popupContent(c) {
   const density = c.area > 0 ? c.population / c.area : 0;
   const rows = [
     [tr("capital"), language === "en" ? (c.capitalEn || c.capital) : c.capital],
-    [tr("continent"), c.continent],
+    [tr("continent"), continentLabel(c.continent)],
     [tr("domain"), c.tld],
     [tr("area"), formatArea(c.area)],
     [tr("population"), nf.format(c.population)],
@@ -518,6 +518,7 @@ mapJumpEl.addEventListener("keydown", (e) => {
 });
 
 // Länderdaten wurden (neu) geladen → Karte aktualisieren
+document.addEventListener("language-changed", () => { if (map && geoData) { buildLayer(); renderLegend(); fillJumpList(); } });
 document.addEventListener("countries-updated", () => {
   if (map && geoData) {
     buildLayer();
