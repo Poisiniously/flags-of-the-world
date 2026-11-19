@@ -36,7 +36,8 @@ let map = null;
 let geoLayer = null;
 let geoData = null;
 let mapStarted = false;
-let colorMode = "continent";\nlet selectedCountry = null;
+let colorMode = "continent";
+let selectedCountry = null;
 
 // ISO-3166-1-Zuordnung für die mitgelieferten Offline-Länderdaten.
 // Die GeoJSON-Kartendaten verwenden ISO-3-Codes, data.js dagegen ISO-2-Codes.
