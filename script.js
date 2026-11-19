@@ -21,6 +21,7 @@ const I18N = {
 };
 const tr = key => I18N[language][key] || key;
 function displayName(c) { return language === "en" ? (new Intl.DisplayNames(["en"], {type:"region"}).of(c.code.toUpperCase()) || c.name) : c.name; }
+function continentLabel(value) { return language === "de" ? value : ({Europa:"Europe",Asien:"Asia",Afrika:"Africa",Nordamerika:"North America",Südamerika:"South America",Ozeanien:"Oceania"}[value] || value); }
 function applyPreferences() {
   document.documentElement.lang = language;
   document.getElementById("search").placeholder = tr("search");
@@ -248,7 +249,7 @@ function render() {
       </div>`;
     card.querySelector("h3").textContent = displayName(c);
     card.querySelector(".capital").textContent = `${tr("capital")}: ${language === "en" ? (c.capitalEn || c.capital) : c.capital}`;
-    card.querySelector(".continent").textContent = c.continent;
+    card.querySelector(".continent").textContent = continentLabel(c.continent);
     card.querySelector(".tld").textContent = c.tld;
     frag.appendChild(card);
   }
