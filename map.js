@@ -657,7 +657,7 @@ document.addEventListener("countries-updated", () => {
   if (map && geoData && map.isStyleLoaded()) {
     buildLayer();
     renderLegend();
-    
+    updateMapSuggestions();
   }
 });
 
