@@ -414,16 +414,15 @@ function buildLayer() {
 
   geoLayer = L.geoJSON(geoData, {
     style: styleFor,
+    bubblingMouseEvents: false,
     onEachFeature(feature, layer) {
       const c = countryForFeature(feature);
       if (!c) return;
       layerByCode.set(c.code, layer);
 
-      layer.bindTooltip(() => tooltipContent(c), { sticky: true, direction: "top", className: "map-tooltip" });
-      layer.on("click", (event) => {
-        if (event && event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
-        showCountrySidebar(c);
-      });
+      layer.bindTooltip(() => tooltipContent(c), { sticky: false, direction: "top", interactive: false, className: "map-tooltip" });
+      // Direkt auf der Länderfläche reagieren – kein Klick auf Tooltip nötig.
+      layer.on("click", () => showCountrySidebar(c));
       layer.on({
         mouseover() {
           layer.setStyle({ weight: 2, color: "#ffffff", fillOpacity: 1 });
