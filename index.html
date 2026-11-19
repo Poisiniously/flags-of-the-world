@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Flags of the World – Alle Flaggen, Länder & Hauptstädte</title>
   <meta name="description" content="Alle Flaggen der Welt mit Ländernamen und Hauptstädten – durchsuchbar, filterbar und sortierbar, dazu eine interaktive Weltkarte." />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.19.0/dist/maplibre-gl.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -96,15 +95,13 @@
     <p>
       Länderdaten von <a href="https://countries.dev" target="_blank" rel="noopener">countries.dev</a>,
       Flaggen von <a href="https://flagcdn.com" target="_blank" rel="noopener">flagcdn.com</a>,
-      Karte mit <a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a> und
+      Karte mit <a href="https://maplibre.org/" target="_blank" rel="noopener">MapLibre GL JS</a> und
       Ländergrenzen von <a href="https://www.geoboundaries.org/" target="_blank" rel="noopener">geoBoundaries (CC BY 4.0)</a>.
     </p>
   </footer>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="data.js"></script>
   <script src="script.js"></script>
-  <script src="map.js"></script>
+  <script type="module" src="map.js"></script>
 </body>
 </html>
