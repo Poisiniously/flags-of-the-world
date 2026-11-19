@@ -11,6 +11,7 @@
 </head>
 <body>
   <header class="hero">
+    <div class="preferences"><button id="theme-toggle" type="button">☀️ / 🌙</button><button id="language-toggle" type="button">DE / EN</button></div>
     <h1>🌍 Flags of the World</h1>
     <p class="subtitle">Alle Flaggen der Welt mit Ländernamen und Hauptstädten</p>
   </header>
@@ -25,7 +26,7 @@
     <div id="view-flags" role="tabpanel" aria-labelledby="tab-flags">
       <section class="controls" aria-label="Suche, Filter und Sortierung">
         <div class="search-wrap">
-          <input id="search" type="search" placeholder="Land, Hauptstadt oder Domain-Endung suchen …" autocomplete="off" aria-label="Suche" />
+          <input id="search" type="search" placeholder="Land, Hauptstadt oder Domain-Endung suchen …" autocomplete="off" aria-label="Suche" aria-controls="search-suggestions" aria-expanded="false" /><div id="search-suggestions" class="suggestions" role="listbox" hidden></div>
         </div>
 
         <div class="sort-wrap">
@@ -64,8 +65,7 @@
         </div>
         <div class="map-field map-field-grow">
           <label for="map-jump">Zu Land springen</label>
-          <input id="map-jump" type="search" list="map-jump-list" placeholder="Landesnamen eingeben …" autocomplete="off" />
-          <datalist id="map-jump-list"></datalist>
+          <input id="map-jump" type="search" placeholder="Landesnamen eingeben …" autocomplete="off" />
         </div>
       </section>
 
