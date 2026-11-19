@@ -388,13 +388,18 @@ function showCountrySidebar(c) {
   }
   content.append(img, title, info);
   sidebar.hidden = false;
+  sidebar.style.display = "block";
+  sidebar.setAttribute("aria-hidden", "false");
   const mapWrap = document.querySelector(".map-wrap");
   if (mapWrap) mapWrap.classList.add("has-sidebar");
   if (map) requestAnimationFrame(() => map.invalidateSize({ pan: false }));
 }
 
 function hideCountrySidebar() {
-  document.getElementById("country-sidebar").hidden = true;
+  const sidebar = document.getElementById("country-sidebar");
+  sidebar.hidden = true;
+  sidebar.style.display = "none";
+  sidebar.setAttribute("aria-hidden", "true");
   const mapWrap = document.querySelector(".map-wrap");
   if (mapWrap) mapWrap.classList.remove("has-sidebar");
   selectedCountry = null;
@@ -415,7 +420,10 @@ function buildLayer() {
       layerByCode.set(c.code, layer);
 
       layer.bindTooltip(() => tooltipContent(c), { sticky: true, direction: "top", className: "map-tooltip" });
-      layer.on("click", () => showCountrySidebar(c));
+      layer.on("click", (event) => {
+        if (event && event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
+        showCountrySidebar(c);
+      });
       layer.on({
         mouseover() {
           layer.setStyle({ weight: 2, color: "#ffffff", fillOpacity: 1 });
@@ -513,6 +521,7 @@ async function startMap() {
 }
 
 // ---------- Ereignisse ----------
+document.getElementById("sidebar-close")?.addEventListener("click", hideCountrySidebar);
 mapStatusEl.addEventListener("click", async (e) => {
   if (!e.target.closest(".retry")) return;
   if (!items.some((c) => c.iso3)) await init(true);
