@@ -372,3 +372,24 @@ footer a { color: var(--accent); }
     box-shadow: none;
   }
 }
+
+
+/* Kurze Übergangsanimation beim Wechsel des ausgewählten Landes */
+.country-sidebar #sidebar-content.country-switch {
+  animation: country-switch-in 220ms ease-out both;
+}
+@keyframes country-switch-in {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .country-sidebar #sidebar-content.country-switch {
+    animation: none;
+  }
+}
