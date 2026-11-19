@@ -1,13 +1,15 @@
 // =====================================================================
 // Reiter-Navigation + interaktive Weltkarte (Leaflet)
 //
-// Die Länderformen (GeoJSON) werden online von jsDelivr geladen, die
-// Länderdaten kommen aus script.js (items / dataReady). Ein Land auf der
-// Karte wird über den ISO-3-Code (cca3) der REST Countries API zugeordnet.
+// Die Ländergrenzen werden über die geoBoundaries-API geladen.
+// Länderdaten kommen aus script.js (items / dataReady) und werden per ISO-3
+// zugeordnet. Bei API-Ausfall bleibt world.geo.json als Fallback verfügbar.
 // =====================================================================
 
-const GEOJSON_URL = "https://cdn.jsdelivr.net/gh/johan/world.geo.json@master/countries.geo.json";
-const GEO_TIMEOUT_MS = 20000;
+const GEOBOUNDARIES_API_URL = "https://www.geoboundaries.org/api/current/gbOpen/ALL/ADM0/";
+const GEOJSON_FALLBACK_URL = "https://cdn.jsdelivr.net/gh/johan/world.geo.json@master/countries.geo.json";
+const GEO_TIMEOUT_MS = 45000;
+const GEO_CONCURRENCY = 12;
 
 const CONTINENT_COLORS = {
   Europa: "#6c8cff",
@@ -342,19 +344,75 @@ function jumpTo(name) {
   showCountrySidebar(c);
 }
 
+async function fetchGeoBoundaries(signal) {
+  const response = await fetch(GEOBOUNDARIES_API_URL, { signal });
+  if (!response.ok) throw new Error(`geoBoundaries API: HTTP ${response.status}`);
+  const boundaries = await response.json();
+  if (!Array.isArray(boundaries)) throw new Error("Ungültige geoBoundaries-Antwort");
+
+  const countries = boundaries.filter((entry) =>
+    entry.boundaryType === "ADM0" &&
+    /^[A-Z]{3}$/.test(entry.boundaryISO || "") &&
+    (entry.simplifiedGeometryGeoJSON || entry.gjDownloadURL)
+  );
+  if (countries.length < 150) throw new Error("Zu wenige Ländergrenzen von geoBoundaries");
+
+  const features = [];
+  let nextIndex = 0;
+  const workers = Array.from({ length: Math.min(GEO_CONCURRENCY, countries.length) }, async () => {
+    while (nextIndex < countries.length) {
+      const entry = countries[nextIndex++];
+      const url = entry.simplifiedGeometryGeoJSON || entry.gjDownloadURL;
+      try {
+        const response = await fetch(url, { signal });
+        if (!response.ok) return;
+        const geometry = await response.json();
+        if (!geometry || !Array.isArray(geometry.features)) return;
+
+        for (const feature of geometry.features) {
+          if (!feature || !feature.geometry) continue;
+          features.push({
+            ...feature,
+            id: entry.boundaryISO,
+            properties: {
+              ...(feature.properties || {}),
+              name: entry.boundaryName || (feature.properties && feature.properties.shapeName) || entry.boundaryISO,
+              boundaryISO: entry.boundaryISO,
+            },
+          });
+        }
+      } catch (error) {
+        if (signal.aborted) throw error;
+        // Einzelne Länderdateien können fehlen; die übrigen Grenzen bleiben nutzbar.
+      }
+    }
+  });
+
+  await Promise.all(workers);
+  if (features.length < 150) throw new Error("Zu wenige Ländergrenzen konnten geladen werden");
+  return { type: "FeatureCollection", features };
+}
+
 async function fetchGeo() {
   if (geoData) return geoData;
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), GEO_TIMEOUT_MS);
   try {
-    const res = await fetch(GEOJSON_URL, { signal: ctrl.signal });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    if (!data || data.type !== "FeatureCollection" || !Array.isArray(data.features)) {
-      throw new Error("Unerwartetes Kartenformat");
+    try {
+      geoData = await fetchGeoBoundaries(ctrl.signal);
+      console.info(`geoBoundaries: ${geoData.features.length} Ländergrenzen geladen`);
+    } catch (error) {
+      if (ctrl.signal.aborted) throw error;
+      console.warn("geoBoundaries konnte nicht geladen werden; nutze Ersatz-Kartendaten:", error);
+      const response = await fetch(GEOJSON_FALLBACK_URL, { signal: ctrl.signal });
+      if (!response.ok) throw new Error(`Karten-Fallback: HTTP ${response.status}`);
+      const fallback = await response.json();
+      if (!fallback || fallback.type !== "FeatureCollection" || !Array.isArray(fallback.features)) {
+        throw new Error("Unerwartetes Kartenformat");
+      }
+      geoData = fallback;
     }
-    geoData = data;
-    return data;
+    return geoData;
   } finally {
     clearTimeout(timer);
   }
