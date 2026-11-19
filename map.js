@@ -587,7 +587,7 @@ async function startMap() {
     if (!items.some((c) => c.iso3 || ISO3_BY_CODE[c.code])) throw new Error("no-country-codes");
     buildLayer();
     renderLegend();
-    
+    updateMapSuggestions();
     hideMapStatus();
     map.resize();
   } catch (err) {
