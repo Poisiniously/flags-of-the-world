@@ -110,7 +110,7 @@ function mapApiCountry(c) {
     iso3: c.cca3 || null, // wird für die Zuordnung zur Weltkarte gebraucht
     name: (c.translations && c.translations.deu && c.translations.deu.common) ||
           (local && local.name) || code.toUpperCase(),
-    capital: (local && local.capital) || (c.capital && c.capital[0]) || "–",
+    capital: (local && local.capital) || (c.capital && c.capital[0]) || "–",\n    capitalEn: (c.capital && c.capital[0]) || (local && local.capital) || "–",
     continent,
     area: typeof c.area === "number" ? c.area : local ? local.area : 0,
     population: typeof c.population === "number" ? c.population : local ? local.population : 0,
@@ -245,7 +245,7 @@ function render() {
         </div>
       </div>`;
     card.querySelector("h3").textContent = displayName(c);
-    card.querySelector(".capital").textContent = `Hauptstadt: ${c.capital}`;
+    card.querySelector(".capital").textContent = `${tr("capital")}: ${language === "en" ? (c.capitalEn || c.capital) : c.capital}`;
     card.querySelector(".continent").textContent = c.continent;
     card.querySelector(".tld").textContent = c.tld;
     frag.appendChild(card);
@@ -357,7 +357,7 @@ function openModal(code) {
 
   const density = c.area > 0 ? c.population / c.area : 0;
   const rows = [
-    [tr("capital"), c.capital],
+    [tr("capital"), language === "en" ? (c.capitalEn || c.capital) : c.capital],
     [tr("continent"), c.continent],
     [tr("domain"), c.tld],
     [tr("area"), formatArea(c.area)],
