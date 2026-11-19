@@ -97,7 +97,7 @@ const mapStatusEl = document.getElementById("map-status");
 const mapLegendEl = document.getElementById("map-legend");
 const mapColorEl = document.getElementById("map-color");
 const mapJumpEl = document.getElementById("map-jump");
-const mapJumpList = document.getElementById("map-jump-list");
+const mapJumpSuggestions = document.getElementById("map-jump-suggestions");
 
 // ---------- Status ----------
 const RETRY_BTN = ' <button type="button" class="retry">Erneut versuchen</button>';
@@ -281,6 +281,77 @@ function updateSelectedCountryOutline(country) {
   });
 }
 
+function matchingMapCountries(query) {
+  const q = normalize(query);
+  if (!q) return [];
+  const terms = q.split(/\\s+/).filter(Boolean);
+  return items.filter((country) => {
+    const haystack = country.searchText || normalize(
+      `${country.name} ${displayName(country)} ${country.capital} ${country.capitalEn || ""} ${country.code} ${country.tld}`
+    );
+    return terms.every((term) => haystack.includes(term));
+  });
+}
+
+function updateMapSearchOutlines(matches) {
+  const source = map?.getSource("map-search-outlines");
+  if (!source || !geoData) return;
+  const codes = new Set(matches.map((country) => country.code));
+  const features = geoData.features.filter((feature) => {
+    const country = countryForFeature(feature);
+    return country && codes.has(country.code);
+  });
+  source.setData({ type: "FeatureCollection", features });
+}
+
+function closeMapSuggestions() {
+  mapJumpSuggestions.hidden = true;
+  mapJumpEl.setAttribute("aria-expanded", "false");
+}
+
+function updateMapSuggestions() {
+  const query = mapJumpEl.value;
+  const matches = matchingMapCountries(query);
+  mapJumpSuggestions.replaceChildren();
+
+  if (!normalize(query)) {
+    updateMapSearchOutlines([]);
+    closeMapSuggestions();
+    return;
+  }
+
+  // Outline every match, not just the suggestions visible in the dropdown.
+  updateMapSearchOutlines(matches);
+
+  for (const country of matches.slice(0, 8)) {
+    const option = document.createElement("button");
+    option.type = "button";
+    option.className = "map-suggestion";
+    option.setAttribute("role", "option");
+    const flag = document.createElement("img");
+    flag.src = flagUrl(country.code, 80);
+    flag.alt = "";
+    const name = document.createElement("span");
+    name.textContent = displayName(country);
+    const capital = document.createElement("small");
+    capital.textContent = country.capital;
+    option.append(flag, name, capital);
+    option.addEventListener("click", () => {
+      mapJumpEl.value = displayName(country);
+      closeMapSuggestions();
+      updateMapSearchOutlines([country]);
+      jumpTo(country.name);
+    });
+    mapJumpSuggestions.appendChild(option);
+  }
+
+  closeMapSuggestions();
+  if (matches.length) {
+    mapJumpSuggestions.hidden = false;
+    mapJumpEl.setAttribute("aria-expanded", "true");
+  }
+}
+
 function hideCountrySidebar() {
   const sidebar = document.getElementById("country-sidebar");
   sidebar.hidden = true;
@@ -344,6 +415,20 @@ function buildLayer() {
       id: "countries-selected-outline",
       type: "line",
       source: "selected-country-outline",
+      paint: {
+        "line-color": "#ffffff",
+        "line-opacity": 1,
+        "line-width": 2.5,
+      },
+    });
+    map.addSource("map-search-outlines", {
+      type: "geojson",
+      data: { type: "FeatureCollection", features: [] },
+    });
+    map.addLayer({
+      id: "countries-search-outline",
+      type: "line",
+      source: "map-search-outlines",
       paint: {
         "line-color": "#ffffff",
         "line-opacity": 1,
@@ -429,16 +514,6 @@ function createMap() {
   });
 }
 
-function fillJumpList() {
-  mapJumpList.innerHTML = "";
-  const names = items.map((c) => displayName(c)).sort((a, b) => collator.compare(a, b));
-  for (const n of names) {
-    const opt = document.createElement("option");
-    opt.value = n;
-    mapJumpList.appendChild(opt);
-  }
-}
-
 function jumpTo(name) {
   const country = countryByName.get(normalize(name));
   if (!country || !map || !geoData) return;
@@ -512,7 +587,7 @@ async function startMap() {
     if (!items.some((c) => c.iso3 || ISO3_BY_CODE[c.code])) throw new Error("no-country-codes");
     buildLayer();
     renderLegend();
-    fillJumpList();
+    
     hideMapStatus();
     map.resize();
   } catch (err) {
@@ -543,21 +618,46 @@ mapColorEl.addEventListener("change", () => {
   renderLegend();
 });
 
-mapJumpEl.addEventListener("change", () => { const c = items.find(x => normalize(displayName(x)) === normalize(mapJumpEl.value) || normalize(x.name) === normalize(mapJumpEl.value)); if (c) jumpTo(c.name); });
-mapJumpEl.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") jumpTo(mapJumpEl.value);
+mapJumpEl.addEventListener("input", updateMapSuggestions);
+mapJumpEl.addEventListener("focus", updateMapSuggestions);
+mapJumpEl.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    const exact = items.find((country) =>
+      normalize(displayName(country)) === normalize(mapJumpEl.value) ||
+      normalize(country.name) === normalize(mapJumpEl.value)
+    );
+    const firstMatch = matchingMapCountries(mapJumpEl.value)[0];
+    const country = exact || firstMatch;
+    if (country) {
+      event.preventDefault();
+      mapJumpEl.value = displayName(country);
+      closeMapSuggestions();
+      updateMapSearchOutlines([country]);
+      jumpTo(country.name);
+    }
+  } else if (event.key === "Escape") {
+    closeMapSuggestions();
+  }
+});
+document.addEventListener("click", (event) => {
+  if (!event.target.closest(".map-field-grow")) closeMapSuggestions();
 });
 
 // Länderdaten wurden (neu) geladen → Karte aktualisieren
 document.addEventListener("language-changed", () => {
-  if (map && geoData && map.isStyleLoaded()) { buildLayer(); renderLegend(); fillJumpList(); }
+  if (map && geoData && map.isStyleLoaded()) {
+    buildLayer();
+    renderLegend();
+    
+    updateMapSuggestions();
+  }
   if (selectedCountry) showCountrySidebar(selectedCountry);
 });
 document.addEventListener("countries-updated", () => {
   if (map && geoData && map.isStyleLoaded()) {
     buildLayer();
     renderLegend();
-    fillJumpList();
+    
   }
 });
 
