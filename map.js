@@ -284,7 +284,7 @@ function updateSelectedCountryOutline(country) {
 function matchingMapCountries(query) {
   const q = normalize(query);
   if (!q) return [];
-  const terms = q.split(/\\s+/).filter(Boolean);
+  const terms = q.split(/\s+/).filter(Boolean);
   return items.filter((country) => {
     const haystack = country.searchText || normalize(
       `${country.name} ${displayName(country)} ${country.capital} ${country.capitalEn || ""} ${country.code} ${country.tld}`
