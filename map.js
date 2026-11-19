@@ -365,9 +365,9 @@ async function fetchGeoBoundaries(signal) {
       const url = entry.simplifiedGeometryGeoJSON || entry.gjDownloadURL;
       try {
         const response = await fetch(url, { signal });
-        if (!response.ok) return;
+        if (!response.ok) continue;
         const geometry = await response.json();
-        if (!geometry || !Array.isArray(geometry.features)) return;
+        if (!geometry || !Array.isArray(geometry.features)) continue;
 
         for (const feature of geometry.features) {
           if (!feature || !feature.geometry) continue;
