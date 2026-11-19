@@ -420,17 +420,30 @@ function buildLayer() {
       if (!c) return;
       layerByCode.set(c.code, layer);
 
-      layer.bindTooltip(() => tooltipContent(c), { sticky: false, direction: "top", interactive: false, className: "map-tooltip" });
-      // Direkt auf der Länderfläche reagieren – kein Klick auf Tooltip nötig.
-      layer.on("click", () => showCountrySidebar(c));
-      layer.on({
-        mouseover() {
-          layer.setStyle({ weight: 2, color: "#ffffff", fillOpacity: 1 });
-          layer.bringToFront();
-        },
-        mouseout() {
-          geoLayer.resetStyle(layer);
-        },
+      // Touch-Geräte (z. B. iPad): keine Hover-Tooltips oder Layer-Verschiebungen,
+      // da diese beim ersten Tap die Länderfläche unter dem Finger verändern können.
+      if (!L.Browser.touch) {
+        layer.bindTooltip(() => tooltipContent(c), {
+          sticky: false,
+          direction: "top",
+          interactive: false,
+          className: "map-tooltip",
+        });
+        layer.on({
+          mouseover() {
+            layer.setStyle({ weight: 2, color: "#ffffff", fillOpacity: 1 });
+          },
+          mouseout() {
+            geoLayer.resetStyle(layer);
+          },
+        });
+      }
+
+      // Leaflet verarbeitet einen Tap auf einem Länder-Polygon als click.
+      // Der Handler bleibt auf Touch- und Mausgeräten identisch.
+      layer.on("click", (event) => {
+        if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
+        showCountrySidebar(c);
       });
     },
   }).addTo(map);
