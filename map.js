@@ -405,11 +405,9 @@ function buildLayer() {
       layer.bindPopup(() => popupContent(c), {
         minWidth: 190,
         maxWidth: 280,
-        maxHeight: Math.min(360, Math.floor(window.innerHeight * 0.55)),
+        maxHeight: Math.max(180, Math.min(360, window.innerHeight - 140)),
         autoPan: true,
-        autoPanPaddingTopLeft: [24, 24],
-        autoPanPaddingBottomRight: [24, 24],
-        keepInView: true,
+        autoPanPadding: [32, 32],
       });
       layer.on({
         mouseover() {
