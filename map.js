@@ -317,12 +317,12 @@ function renderLegend() {
   let entries;
   if (colorMode === "continent") {
     title = "Kontinente";
-    entries = CONTINENTS.map((n) => [CONTINENT_COLORS[n], n]);
+    entries = CONTINENTS.map((n) => [CONTINENT_COLORS[n], language === "de" ? n : ({Europa:"Europe",Asien:"Asia",Afrika:"Africa",Nordamerika:"North America",Südamerika:"South America",Ozeanien:"Oceania"}[n])]);
   } else {
-    title = SCALES[colorMode].title;
+    title = language === "de" ? SCALES[colorMode].title : (colorMode === "area" ? "Area" : "Population");
     entries = SCALES[colorMode].labels.map((l, i) => [SCALE_COLORS[i], l]);
   }
-  entries.push([NEUTRAL_FILL, "ohne Daten"]);
+  entries.push([NEUTRAL_FILL, tr("noData")]);
 
   const h = document.createElement("strong");
   h.textContent = title;
@@ -349,7 +349,7 @@ function tooltipContent(c) {
   img.src = flagUrl(c.code, 80);
   img.alt = "";
   const name = document.createElement("span");
-  name.textContent = c.name;
+  name.textContent = displayName(c);
   el.append(img, name);
   return el;
 }
@@ -362,7 +362,7 @@ function popupContent(c) {
   img.src = flagUrl(c.code, 160);
   img.alt = "";
   const h = document.createElement("strong");
-  h.textContent = c.name;
+  h.textContent = displayName(c);
   const lines = document.createElement("div");
   lines.className = "popup-lines";
   const density = c.area > 0 ? c.population / c.area : 0;
@@ -512,7 +512,7 @@ mapColorEl.addEventListener("change", () => {
   renderLegend();
 });
 
-mapJumpEl.addEventListener("change", () => jumpTo(mapJumpEl.value));
+mapJumpEl.addEventListener("change", () => { const c = items.find(x => normalize(displayName(x)) === normalize(mapJumpEl.value) || normalize(x.name) === normalize(mapJumpEl.value)); if (c) jumpTo(c.name); });
 mapJumpEl.addEventListener("keydown", (e) => {
   if (e.key === "Enter") jumpTo(mapJumpEl.value);
 });
