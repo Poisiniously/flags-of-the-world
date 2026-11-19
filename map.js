@@ -289,7 +289,10 @@ function matchingMapCountries(query) {
     const haystack = country.searchText || normalize(
       `${country.name} ${displayName(country)} ${country.capital} ${country.capitalEn || ""} ${country.code} ${country.tld}`
     );
-    return terms.every((term) => haystack.includes(term));
+    // Autocomplete should match the beginning of a word, not arbitrary
+    // substrings (e.g. "d" must not match Algeria only because of ".dz").
+    const words = haystack.split(/[^\\p{L}\\p{N}]+/u).filter(Boolean);
+    return terms.every((term) => words.some((word) => word.startsWith(term)));
   });
 }
 
