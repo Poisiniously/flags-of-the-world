@@ -354,11 +354,12 @@ footer a { color: var(--accent); }
 /* Fixed country information sidebar next to the map */
 .map-wrap {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-columns: minmax(0, 1fr);
   align-items: stretch;
   gap: 1rem;
 }
 #map { min-width: 0; }
+.map-wrap.has-sidebar { grid-template-columns: minmax(0, 1fr) 300px; }
 .country-sidebar {
   position: relative;
   min-width: 0;
