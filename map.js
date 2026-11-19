@@ -8,7 +8,7 @@ import * as maplibregl from "https://unpkg.com/maplibre-gl@6.19.0/dist/maplibre-
 // =====================================================================
 
 // Eine einzige, stark vereinfachte GeoJSON-Datei statt ~180 Einzel-Requests.
-const GEOJSON_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson";
+const GEOJSON_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_admin_0_countries.geojson";
 
 const CONTINENT_COLORS = {
   Europa: "#6c8cff",
@@ -557,9 +557,16 @@ async function fetchGeo() {
     .filter((feature) => feature && feature.geometry)
     .map((feature) => {
       const properties = feature.properties || {};
-      const iso3 = String(
-        properties.ADM0_A3 || properties.ISO_A3_EH || properties.ISO_A3 || ""
-      ).toUpperCase();
+      // Einige Natural-Earth-Features führen in ADM0_A3 den Platzhalter
+      // "-99", obwohl ISO_A3_EH einen gültigen ISO-Code enthält.
+      const iso3 = [
+        properties.ADM0_A3,
+        properties.ISO_A3_EH,
+        properties.ISO_A3,
+        properties.SOV_A3,
+      ]
+        .map((value) => String(value || "").toUpperCase())
+        .find((value) => /^[A-Z]{3}$/.test(value)) || "";
 
       return {
         ...feature,
