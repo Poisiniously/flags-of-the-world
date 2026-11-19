@@ -128,11 +128,17 @@ function rebuildLookup() {
 
 function countryForFeature(feature) {
   if (!feature) return null;
-  // Kosovo hat in den Kartendaten keinen ISO-Code
-  if (feature.properties && feature.properties.name === "Kosovo") {
+  const properties = feature.properties || {};
+  // Kosovo hat in den Kartendaten keinen ISO-Code.
+  if (properties.name === "Kosovo" || properties.ADMIN === "Kosovo") {
     return countryByCode.get("xk") || null;
   }
-  return countryByIso3.get(String(feature.id || "").toUpperCase()) || null;
+  // MapLibre kann die Feature-ID je nach GeoJSON-Verarbeitung auslassen.
+  const iso3 = String(
+    feature.id || properties.iso3 || properties.ADM0_A3 ||
+    properties.ISO_A3_EH || properties.ISO_A3 || ""
+  ).toUpperCase();
+  return countryByIso3.get(iso3) || null;
 }
 
 // ---------- Färbung ----------
@@ -161,7 +167,12 @@ function mapFeatureCollection() {
       return {
         ...feature,
         id,
-        properties: { ...(feature.properties || {}), fillColor: c ? colorFor(c) : NEUTRAL_FILL, hasCountry: Boolean(c) },
+        properties: {
+          ...(feature.properties || {}),
+          iso3: id,
+          fillColor: c ? colorFor(c) : NEUTRAL_FILL,
+          hasCountry: Boolean(c),
+        },
       };
     }),
   };
@@ -325,23 +336,33 @@ function buildLayer() {
   }
 
   if (!mapInteractionsReady) {
-    map.on("click", (event) => {
-      const feature = map.queryRenderedFeatures(event.point, { layers: ["countries-fill"] })[0];
-      const country = feature && countryForFeature(feature);
+    // Layer-spezifische Events sind zuverlässiger als eine manuelle
+    // queryRenderedFeatures-Abfrage bei jedem Klick.
+    map.on("click", "countries-fill", (event) => {
+      const feature = event.features?.[0];
+      const country = countryForFeature(feature);
       if (country) showCountrySidebar(country);
     });
-    map.on("mousemove", (event) => {
-      const feature = map.queryRenderedFeatures(event.point, { layers: ["countries-fill"] })[0];
-      const id = feature ? String(feature.id || "") : "";
-      map.getCanvas().style.cursor = feature ? "pointer" : "";
-      if (hoveredFeatureId && hoveredFeatureId !== id) map.setFeatureState({ source: "countries", id: hoveredFeatureId }, { hover: false });
-      hoveredFeatureId = id || null;
-      if (hoveredFeatureId) map.setFeatureState({ source: "countries", id: hoveredFeatureId }, { hover: true });
+    map.on("mouseenter", "countries-fill", () => {
+      map.getCanvas().style.cursor = "pointer";
     });
-    map.on("mouseleave", () => {
+    map.on("mouseleave", "countries-fill", () => {
       map.getCanvas().style.cursor = "";
-      if (hoveredFeatureId) map.setFeatureState({ source: "countries", id: hoveredFeatureId }, { hover: false });
-      hoveredFeatureId = null;
+      if (hoveredFeatureId) {
+        map.setFeatureState({ source: "countries", id: hoveredFeatureId }, { hover: false });
+        hoveredFeatureId = null;
+      }
+    });
+    map.on("mousemove", "countries-fill", (event) => {
+      const feature = event.features?.[0];
+      const id = feature?.id != null ? String(feature.id) : null;
+      if (hoveredFeatureId && hoveredFeatureId !== id) {
+        map.setFeatureState({ source: "countries", id: hoveredFeatureId }, { hover: false });
+      }
+      hoveredFeatureId = id;
+      if (hoveredFeatureId) {
+        map.setFeatureState({ source: "countries", id: hoveredFeatureId }, { hover: true });
+      }
     });
     mapInteractionsReady = true;
   }
