@@ -426,8 +426,34 @@ function buildLayer() {
   if (geoLayer) map.removeLayer(geoLayer);
   layerByCode.clear();
 
-  geoLayer = L.geoJSON(geoData, {
+  // Tuvalu besteht aus sehr kleinen, weit verstreuten Atollen und fehlt
+  // deshalb in manchen vereinfachten Weltkarten-Datensätzen. Als
+  // anklickbaren Kartenpunkt ergänzen, falls kein Polygon vorhanden ist.
+  const mapFeatures = [...geoData.features];
+  const hasTuvalu = mapFeatures.some((feature) =>
+    String(feature.id || "").toUpperCase() === "TUV" ||
+    (feature.properties && feature.properties.name === "Tuvalu")
+  );
+  if (!hasTuvalu && countryByCode.has("tv")) {
+    mapFeatures.push({
+      type: "Feature",
+      id: "TUV",
+      properties: { name: "Tuvalu", synthetic: true },
+      geometry: { type: "Point", coordinates: [177.15, -7.5] },
+    });
+  }
+
+  geoLayer = L.geoJSON({ type: "FeatureCollection", features: mapFeatures }, {
     style: styleFor,
+    pointToLayer(feature, latlng) {
+      return L.circleMarker(latlng, {
+        radius: 7,
+        color: "#ffffff",
+        weight: 1.5,
+        fillColor: colorFor(countryForFeature(feature)),
+        fillOpacity: 0.95,
+      });
+    },
     bubblingMouseEvents: false,
     onEachFeature(feature, layer) {
       const c = countryForFeature(feature);
