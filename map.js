@@ -496,7 +496,7 @@ async function startMap() {
     mapStarted = false;
     const msg =
       err.message === "no-country-codes"
-        ? "Für die Karte werden die Live-Länderdaten benötigt, die Seite zeigt gerade Offline-Daten."
+        ? "Die ISO-Ländercodes für die Kartenzuordnung konnten nicht ermittelt werden."
         : err.message === "leaflet"
         ? "Die Kartenbibliothek (Leaflet) konnte nicht geladen werden."
         : "Die Karte konnte nicht geladen werden.";
