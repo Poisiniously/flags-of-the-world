@@ -36,7 +36,7 @@ let map = null;
 let geoLayer = null;
 let geoData = null;
 let mapStarted = false;
-let colorMode = "continent";
+let colorMode = "continent";\nlet selectedCountry = null;
 
 // ISO-3166-1-Zuordnung für die mitgelieferten Offline-Länderdaten.
 // Die GeoJSON-Kartendaten verwenden ISO-3-Codes, data.js dagegen ISO-2-Codes.
@@ -354,17 +354,19 @@ function tooltipContent(c) {
   return el;
 }
 
-function popupContent(c) {
-  const el = document.createElement("div");
-  el.className = "popup";
+function showCountrySidebar(c) {
+  const sidebar = document.getElementById("country-sidebar");
+  const content = document.getElementById("sidebar-content");
+  content.innerHTML = "";
+
   const img = document.createElement("img");
-  img.className = "popup-flag";
-  img.src = flagUrl(c.code, 160);
+  img.className = "sidebar-flag";
+  img.src = flagUrl(c.code, 320);
   img.alt = "";
-  const h = document.createElement("strong");
-  h.textContent = displayName(c);
-  const lines = document.createElement("div");
-  lines.className = "popup-lines";
+  const title = document.createElement("h2");
+  title.textContent = displayName(c);
+  const info = document.createElement("dl");
+  info.className = "sidebar-info";
   const density = c.area > 0 ? c.population / c.area : 0;
   const rows = [
     [tr("capital"), language === "en" ? (c.capitalEn || c.capital) : c.capital],
@@ -375,17 +377,19 @@ function popupContent(c) {
     [tr("density"), nf.format(Math.round(density)) + " / km²"],
     [tr("code"), c.code.toUpperCase()]
   ];
-  for (const [k, v] of rows) {
-    const row = document.createElement("div");
-    const key = document.createElement("span");
-    key.textContent = k;
-    const val = document.createElement("b");
-    val.textContent = v;
-    row.append(key, val);
-    lines.appendChild(row);
+  for (const [key, value] of rows) {
+    const dt = document.createElement("dt");
+    const dd = document.createElement("dd");
+    dt.textContent = key;
+    dd.textContent = value;
+    info.append(dt, dd);
   }
-  el.append(img, h, lines);
-  return el;
+  content.append(img, title, info);
+  sidebar.hidden = false;
+}
+
+function hideCountrySidebar() {
+  document.getElementById("country-sidebar").hidden = true;
 }
 
 // ---------- Karte aufbauen ----------
@@ -402,13 +406,7 @@ function buildLayer() {
       layerByCode.set(c.code, layer);
 
       layer.bindTooltip(() => tooltipContent(c), { sticky: true, direction: "top", className: "map-tooltip" });
-      layer.bindPopup(() => popupContent(c), {
-        minWidth: 190,
-        maxWidth: 280,
-        maxHeight: Math.max(180, Math.min(360, window.innerHeight - 140)),
-        autoPan: true,
-        autoPanPadding: [32, 32],
-      });
+      layer.on("click", () => showCountrySidebar(c));
       layer.on({
         mouseover() {
           layer.setStyle({ weight: 2, color: "#ffffff", fillOpacity: 1 });
@@ -454,7 +452,7 @@ function jumpTo(name) {
   }
   hideMapStatus();
   map.fitBounds(layer.getBounds(), { maxZoom: 5, padding: [40, 40] });
-  layer.openPopup(layer.getBounds().getCenter());
+  showCountrySidebar(c);
 }
 
 async function fetchGeo() {
@@ -524,7 +522,10 @@ mapJumpEl.addEventListener("keydown", (e) => {
 });
 
 // Länderdaten wurden (neu) geladen → Karte aktualisieren
-document.addEventListener("language-changed", () => { if (map && geoData) { buildLayer(); renderLegend(); fillJumpList(); } });
+document.addEventListener("language-changed", () => {
+  if (map && geoData) { buildLayer(); renderLegend(); fillJumpList(); }
+  if (selectedCountry) showCountrySidebar(selectedCountry);
+});
 document.addEventListener("countries-updated", () => {
   if (map && geoData) {
     buildLayer();
