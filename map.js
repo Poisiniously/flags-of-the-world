@@ -357,23 +357,25 @@ function tooltipContent(c) {
 function popupContent(c) {
   const el = document.createElement("div");
   el.className = "popup";
-
   const img = document.createElement("img");
   img.className = "popup-flag";
   img.src = flagUrl(c.code, 160);
-  img.alt = `Flagge von ${c.name}`;
-
+  img.alt = "";
   const h = document.createElement("strong");
   h.textContent = c.name;
-
   const lines = document.createElement("div");
   lines.className = "popup-lines";
-  for (const [k, v] of [
-    ["Hauptstadt", c.capital],
-    ["Einwohner", `ca. ${nf.format(c.population)}`],
-    ["Fläche", formatArea(c.area)],
-    ["Domain", c.tld],
-  ]) {
+  const density = c.area > 0 ? c.population / c.area : 0;
+  const rows = [
+    [tr("capital"), c.capital],
+    [tr("continent"), c.continent],
+    [tr("domain"), c.tld],
+    [tr("area"), formatArea(c.area)],
+    [tr("population"), nf.format(c.population)],
+    [tr("density"), nf.format(Math.round(density)) + " / km²"],
+    [tr("code"), c.code.toUpperCase()]
+  ];
+  for (const [k, v] of rows) {
     const row = document.createElement("div");
     const key = document.createElement("span");
     key.textContent = k;
@@ -382,14 +384,7 @@ function popupContent(c) {
     row.append(key, val);
     lines.appendChild(row);
   }
-
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "popup-more";
-  btn.textContent = "Mehr Details";
-  btn.addEventListener("click", () => openModal(c.code));
-
-  el.append(img, h, lines, btn);
+  el.append(img, h, lines);
   return el;
 }
 
