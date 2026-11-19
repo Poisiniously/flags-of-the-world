@@ -356,7 +356,17 @@ function tooltipContent(c) {
 }
 
 function showCountrySidebar(c) {
+  // Vorherige Auswahl zurücksetzen und das aktuell gewählte Land umranden.
+  if (selectedCountry && selectedCountry.code !== c.code) {
+    const previousLayer = layerByCode.get(selectedCountry.code);
+    if (previousLayer && geoLayer) geoLayer.resetStyle(previousLayer);
+  }
   selectedCountry = c;
+  const selectedLayer = layerByCode.get(c.code);
+  if (selectedLayer) {
+    selectedLayer.setStyle({ color: "#ffffff", weight: 2.5, fillOpacity: 1 });
+  }
+
   const sidebar = document.getElementById("country-sidebar");
   const content = document.getElementById("sidebar-content");
   content.innerHTML = "";
@@ -402,6 +412,10 @@ function hideCountrySidebar() {
   sidebar.setAttribute("aria-hidden", "true");
   const mapWrap = document.querySelector(".map-wrap");
   if (mapWrap) mapWrap.classList.remove("has-sidebar");
+  if (selectedCountry) {
+    const selectedLayer = layerByCode.get(selectedCountry.code);
+    if (selectedLayer && geoLayer) geoLayer.resetStyle(selectedLayer);
+  }
   selectedCountry = null;
   if (map) requestAnimationFrame(() => map.invalidateSize({ pan: false }));
 }
