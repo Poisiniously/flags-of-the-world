@@ -482,7 +482,7 @@ async function startMap() {
   try {
     if (typeof L === "undefined") throw new Error("leaflet");
     await dataReady;
-    if (!items.some((c) => c.iso3)) throw new Error("no-live-data");
+    if (!items.some((c) => c.iso3 || ISO3_BY_CODE[c.code])) throw new Error("no-country-codes");
     await fetchGeo();
 
     if (!map) createMap();
@@ -495,7 +495,7 @@ async function startMap() {
     console.warn("Karte konnte nicht geladen werden:", err);
     mapStarted = false;
     const msg =
-      err.message === "no-live-data"
+      err.message === "no-country-codes"
         ? "Für die Karte werden die Live-Länderdaten benötigt, die Seite zeigt gerade Offline-Daten."
         : err.message === "leaflet"
         ? "Die Kartenbibliothek (Leaflet) konnte nicht geladen werden."
