@@ -157,6 +157,7 @@ main { max-width: 1300px; margin: 0 auto; padding: 0 1rem 3rem; }
 .empty { text-align: center; color: var(--muted); padding: 3rem 0; font-size: 1.1rem; }
 
 /* ---------- Modal ---------- */
+body.modal-open { overflow: hidden; }
 .modal {
   position: fixed;
   inset: 0;
