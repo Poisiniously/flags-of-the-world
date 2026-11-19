@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Flags of the World – Alle Flaggen, Länder & Hauptstädte</title>
+  <meta name="description" content="Alle Flaggen der Welt mit Ländernamen und Hauptstädten – durchsuchbar, filterbar und sortierbar." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="hero">
+    <h1>🌍 Flags of the World</h1>
+    <p class="subtitle">Alle Flaggen der Welt mit Ländernamen und Hauptstädten</p>
+  </header>
+
+  <main>
+    <section class="controls" aria-label="Suche, Filter und Sortierung">
+      <div class="search-wrap">
+        <input id="search" type="search" placeholder="Land oder Hauptstadt suchen …" autocomplete="off" aria-label="Suche" />
+      </div>
+
+      <div class="sort-wrap">
+        <label for="sort">Sortieren nach</label>
+        <select id="sort">
+          <option value="name-asc">Alphabet (A–Z)</option>
+          <option value="name-desc">Alphabet (Z–A)</option>
+          <option value="continent">Kontinent</option>
+          <option value="area-desc">Größe (größte zuerst)</option>
+          <option value="area-asc">Größe (kleinste zuerst)</option>
+          <option value="pop-desc">Einwohner (meiste zuerst)</option>
+          <option value="pop-asc">Einwohner (wenigste zuerst)</option>
+        </select>
+      </div>
+
+      <div id="filters" class="chips" role="group" aria-label="Kontinent-Filter"></div>
+    </section>
+
+    <p id="count" class="count" aria-live="polite"></p>
+
+    <section id="grid" class="grid" aria-label="Flaggen"></section>
+    <p id="empty" class="empty" hidden>Keine Treffer. Versuch einen anderen Suchbegriff oder Filter. 🔎</p>
+  </main>
+
+  <div id="modal" class="modal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button id="modal-close" class="modal-close" aria-label="Schließen">×</button>
+      <img id="modal-flag" class="modal-flag" alt="" />
+      <h2 id="modal-title"></h2>
+      <dl id="modal-info" class="info"></dl>
+    </div>
+  </div>
+
+  <footer>
+    <p>Flaggen von <a href="https://flagcdn.com" target="_blank" rel="noopener">flagcdn.com</a>. Einwohner- und Flächenangaben sind gerundete Näherungswerte.</p>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
