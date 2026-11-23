@@ -685,7 +685,7 @@ async function startMap() {
   if (mapStarted) return;
   if (mapStartPromise) return mapStartPromise;
 
-  mapStartPromise = (async () => {
+  mapStartPromise = Promise.resolve().then(async () => {
     setMapStatus(language === "de" ? "Lade Karte …" : "Loading map …");
 
     try {
@@ -724,10 +724,10 @@ async function startMap() {
           : (language === "de" ? "Die Karte konnte nicht geladen werden." : "The map could not be loaded.");
       const detail = err && err.message ? ` (${err.message})` : "";
       setMapStatus(msg + detail + RETRY_BTN(), { warn: true, html: true });
-    } finally {
-      mapStartPromise = null;
     }
-  })();
+  }).finally(() => {
+    mapStartPromise = null;
+  });
 
   return mapStartPromise;
 }
