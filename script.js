@@ -65,10 +65,14 @@ function applyPreferences() {
   document.getElementById("map-legend").setAttribute("aria-label", tr("legend"));
   document.getElementById("sidebar-close").setAttribute("aria-label", tr("close"));
   document.getElementById("modal-close").setAttribute("aria-label", tr("close"));
-  const footer = document.querySelector("footer p");
-  footer.innerHTML = language === "de"
-    ? 'Länderdaten von <a href="https://countries.dev" target="_blank" rel="noopener">countries.dev</a>, Flaggen von <a href="https://flagcdn.com" target="_blank" rel="noopener">flagcdn.com</a>, Karte mit <a href="https://maplibre.org/" target="_blank" rel="noopener">MapLibre GL JS</a> und Ländergrenzen von <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">Natural Earth</a>.'
-    : 'Country data from <a href="https://countries.dev" target="_blank" rel="noopener">countries.dev</a>, flags from <a href="https://flagcdn.com" target="_blank" rel="noopener">flagcdn.com</a>, mapping by <a href="https://maplibre.org/" target="_blank" rel="noopener">MapLibre GL JS</a>, and boundaries from <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">Natural Earth</a>.';
+  document.getElementById("footer-description").textContent = language === "de"
+    ? "Die Flaggen, Länder und Hauptstädte der Welt – übersichtlich an einem Ort."
+    : "Explore the flags, countries and capitals of the world – all in one place.";
+  document.getElementById("footer-sources-title").textContent = language === "de" ? "Daten & Quellen" : "Data & sources";
+  document.getElementById("footer-country-data").textContent = language === "de" ? " – Länderdaten" : " – country data";
+  document.getElementById("footer-flags").textContent = language === "de" ? " – Flaggen" : " – flags";
+  document.getElementById("footer-maps").textContent = language === "de" ? " – Kartenbibliothek" : " – mapping library";
+  document.getElementById("footer-boundaries").textContent = language === "de" ? " – Ländergrenzen" : " – country boundaries";
   render(); renderFilters();
   document.dispatchEvent(new CustomEvent("language-changed"));
 }
