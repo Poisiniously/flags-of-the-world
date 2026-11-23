@@ -326,55 +326,31 @@ function showCountrySidebar(c) {
 function updateSelectedCountryOutline(country) {
   const source = map?.getSource("selected-country-outline");
   if (!source) return;
-  let features = country && geoData
-    ? geoData.features
-        .filter((entry) => countryForFeature(entry)?.code === country.code)
-        .map((entry) => {
-          // Innenringe (z. B. kleine Seen oder Datenartefakte) nicht als
-          // zusätzliche weiße Ländergrenzen hervorheben.
-          const geometry = entry.geometry;
-          if (geometry?.type === "Polygon") {
-            return { ...entry, geometry: { ...geometry, coordinates: geometry.coordinates.slice(0, 1) } };
-          }
-          if (geometry?.type === "MultiPolygon") {
-            return { ...entry, geometry: { ...geometry, coordinates: geometry.coordinates.map((polygon) => polygon.slice(0, 1)) } };
-          }
-          return entry;
-        })
-    : [];
 
-  // Natural Earth enthält bei Kasachstan zusätzlich ein winziges, separat
-  // erfasstes Polygon im Landesinneren. Es ist kein sinnvoller Teil der
-  // sichtbaren Außengrenze und würde als freistehender Kreis markiert.
-  if (country?.code === "kz") {
-    const area = (ring) => {
-      let sum = 0;
-      for (let i = 0; i < ring.length - 1; i++) {
-        sum += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1];
-      }
-      return Math.abs(sum / 2);
-    };
-    const polygonArea = (polygon) => area(polygon[0] || []);
-    const sizes = features.flatMap((feature) => {
-      const geometry = feature.geometry;
-      if (geometry?.type === "Polygon") return [polygonArea(geometry.coordinates)];
-      if (geometry?.type === "MultiPolygon") return geometry.coordinates.map(polygonArea);
-      return [];
-    });
-    const largest = Math.max(0, ...sizes);
-    const minimum = largest * 0.001;
-    features = features.map((feature) => {
-      const geometry = feature.geometry;
-      if (geometry?.type === "Polygon") {
-        return polygonArea(geometry.coordinates) < minimum ? null : feature;
-      }
-      if (geometry?.type === "MultiPolygon") {
-        const coordinates = geometry.coordinates.filter((polygon) => polygonArea(polygon) >= minimum);
-        return coordinates.length ? { ...feature, geometry: { ...geometry, coordinates } } : null;
-      }
-      return feature;
-    }).filter(Boolean);
-  }
+  // Für die Auswahlkontur nur das eindeutig passende Länder-Feature verwenden.
+  // Das Verknüpfen sämtlicher Features mit demselben ISO-Code kann kleine,
+  // separat erfasste Gebiete oder Datenartefakte (wie den Kreis in Kasachstan)
+  // fälschlich als Teil der Landesgrenze hervorheben.
+  const feature = country ? featureForCountry(country) : null;
+  let features = feature ? [feature] : [];
+
+  features = features.map((entry) => {
+    // Innenringe (z. B. Seen) nicht als zusätzliche Konturen zeichnen.
+    const geometry = entry.geometry;
+    if (geometry?.type === "Polygon") {
+      return { ...entry, geometry: { ...geometry, coordinates: geometry.coordinates.slice(0, 1) } };
+    }
+    if (geometry?.type === "MultiPolygon") {
+      return {
+        ...entry,
+        geometry: {
+          ...geometry,
+          coordinates: geometry.coordinates.map((polygon) => polygon.slice(0, 1)),
+        },
+      };
+    }
+    return entry;
+  });
 
   source.setData({
     type: "FeatureCollection",
