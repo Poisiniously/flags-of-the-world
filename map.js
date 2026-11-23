@@ -22,14 +22,18 @@ const NEUTRAL_FILL = "#2b3263";
 const SCALE_COLORS = ["#2f3d8f", "#4358c9", "#6a73ee", "#9a6df2", "#c867ee", "#ff7ad2"];
 const SCALES = {
   population: {
-    title: "Einwohner",
     bins: [1e6, 1e7, 3e7, 1e8, 3e8],
-    labels: ["unter 1 Mio.", "1–10 Mio.", "10–30 Mio.", "30–100 Mio.", "100–300 Mio.", "über 300 Mio."],
+    labels: {
+      de: ["unter 1 Mio.", "1–10 Mio.", "10–30 Mio.", "30–100 Mio.", "100–300 Mio.", "über 300 Mio."],
+      en: ["Under 1M", "1–10M", "10–30M", "30–100M", "100–300M", "Over 300M"],
+    },
   },
   area: {
-    title: "Fläche",
     bins: [1e4, 1e5, 5e5, 2e6, 5e6],
-    labels: ["unter 10.000 km²", "10.000–100.000 km²", "100.000–500.000 km²", "0,5–2 Mio. km²", "2–5 Mio. km²", "über 5 Mio. km²"],
+    labels: {
+      de: ["unter 10.000 km²", "10.000–100.000 km²", "100.000–500.000 km²", "0,5–2 Mio. km²", "2–5 Mio. km²", "über 5 Mio. km²"],
+      en: ["Under 10,000 km²", "10,000–100,000 km²", "100,000–500,000 km²", "0.5–2M km²", "2–5M km²", "Over 5M km²"],
+    },
   },
 };
 
@@ -100,7 +104,7 @@ const mapJumpEl = document.getElementById("map-jump");
 const mapJumpSuggestions = document.getElementById("map-jump-suggestions");
 
 // ---------- Status ----------
-const RETRY_BTN = ' <button type="button" class="retry">Erneut versuchen</button>';
+const RETRY_BTN = () => ` <button type="button" class="retry">${tr("retry")}</button>`;
 
 function setMapStatus(content, { warn = false, html = false } = {}) {
   mapStatusEl.className = "status" + (warn ? " warn" : "");
@@ -220,11 +224,11 @@ function renderLegend() {
   let title;
   let entries;
   if (colorMode === "continent") {
-    title = "Kontinente";
+    title = language === "de" ? "Kontinente" : "Continents";
     entries = CONTINENTS.map((n) => [CONTINENT_COLORS[n], language === "de" ? n : ({Europa:"Europe",Asien:"Asia",Afrika:"Africa",Nordamerika:"North America",Südamerika:"South America",Ozeanien:"Oceania"}[n])]);
   } else {
-    title = language === "de" ? SCALES[colorMode].title : (colorMode === "area" ? "Area" : "Population");
-    entries = SCALES[colorMode].labels.map((l, i) => [SCALE_COLORS[i], l]);
+    title = language === "de" ? (colorMode === "area" ? "Fläche" : "Einwohner") : (colorMode === "area" ? "Area" : "Population");
+    entries = SCALES[colorMode].labels[language].map((l, i) => [SCALE_COLORS[i], l]);
   }
   entries.push([NEUTRAL_FILL, tr("noData")]);
 
@@ -561,7 +565,10 @@ function jumpTo(name) {
   if (!country || !map || !geoData) return;
   const feature = featureForCountry(country);
   if (!feature) {
-    setMapStatus(`„${country.name}“ ist auf dieser Karte nicht als Fläche enthalten (zu klein oder fehlt in den Kartendaten). `, { warn: true });
+    const message = language === "de"
+      ? `„${displayName(country)}“ ist auf dieser Karte nicht als Fläche enthalten (zu klein oder fehlt in den Kartendaten).`
+      : `${displayName(country)} is not shown as a selectable area on this map (it may be too small or missing from the map data).`;
+    setMapStatus(message, { warn: true });
     setTimeout(hideMapStatus, 5000);
     return;
   }
@@ -673,7 +680,7 @@ async function fetchGeo() {
 async function startMap() {
   if (mapStarted) return;
   mapStarted = true;
-  setMapStatus("Lade Karte …");
+  setMapStatus(language === "de" ? "Lade Karte …" : "Loading map …");
 
   try {
     if (typeof maplibregl === "undefined") throw new Error("maplibre");
@@ -691,12 +698,12 @@ async function startMap() {
     mapStarted = false;
     const msg =
       err.message === "no-country-codes"
-        ? "Die ISO-Ländercodes für die Kartenzuordnung konnten nicht ermittelt werden."
+        ? (language === "de" ? "Die ISO-Ländercodes für die Kartenzuordnung konnten nicht ermittelt werden." : "Could not determine ISO country codes for the map.")
         : err.message === "maplibre"
-        ? "Die Kartenbibliothek (MapLibre GL JS) konnte nicht geladen werden."
-        : "Die Karte konnte nicht geladen werden.";
+        ? (language === "de" ? "Die Kartenbibliothek (MapLibre GL JS) konnte nicht geladen werden." : "The map library (MapLibre GL JS) could not be loaded.")
+        : (language === "de" ? "Die Karte konnte nicht geladen werden." : "The map could not be loaded.");
     const detail = err && err.message ? ` (${err.message})` : "";
-    setMapStatus(msg + detail + RETRY_BTN, { warn: true, html: true });
+    setMapStatus(msg + detail + RETRY_BTN(), { warn: true, html: true });
   }
 }
 
