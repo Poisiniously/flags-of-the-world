@@ -126,6 +126,16 @@ function rebuildLookup() {
   }
 }
 
+// Natural Earth nutzt bei einigen Gebieten eigene Kürzel statt ISO-3166.
+// Das Gebiet wird dem Staat zugeordnet, zu dem es auf einer Länderkarte gehört.
+const GEO_ALIASES = {
+  SDS: "SSD", // Südsudan
+  SOL: "SOM", // Somaliland → Somalia
+  CYN: "CYP", // Nordzypern → Zypern
+  KOS: "XKX", // Kosovo
+  PSX: "PSE", // Palästina
+};
+
 function countryForFeature(feature) {
   if (!feature) return null;
   const properties = feature.properties || {};
@@ -133,12 +143,31 @@ function countryForFeature(feature) {
   if (properties.name === "Kosovo" || properties.ADMIN === "Kosovo") {
     return countryByCode.get("xk") || null;
   }
-  // MapLibre kann die Feature-ID je nach GeoJSON-Verarbeitung auslassen.
-  const iso3 = String(
-    feature.id || properties.iso3 || properties.ADM0_A3 ||
-    properties.ISO_A3_EH || properties.ISO_A3 || ""
-  ).toUpperCase();
-  return countryByIso3.get(iso3) || null;
+  // Mehrere Felder probieren, das erste mit Treffer gewinnt. In Natural Earth
+  // steht je nach Land in ADM0_A3, ISO_A3_EH oder ISO_A3 der brauchbare Code
+  // (bei Frankreich/Norwegen ist ISO_A3 z. B. "-99").
+  const candidates = [
+    feature.id, properties.iso3, properties.ADM0_A3, properties.ISO_A3_EH, properties.ISO_A3,
+  ];
+  for (const value of candidates) {
+    const raw = String(value || "").toUpperCase();
+    const c = countryByIso3.get(raw) || countryByIso3.get(GEO_ALIASES[raw] || "");
+    if (c) return c;
+  }
+  return null;
+}
+
+// Hauptfläche eines Landes. Gehören mehrere Flächen zu einem Land (z. B.
+// Somalia und Somaliland), gewinnt die mit dem passenden ISO-Code.
+function featureForCountry(country) {
+  if (!country || !geoData) return null;
+  const matches = geoData.features.filter((f) => countryForFeature(f)?.code === country.code);
+  const iso3 = String(country.iso3 || ISO3_BY_CODE[country.code] || "").toUpperCase();
+  const exact = matches.find((f) => {
+    const p = f.properties || {};
+    return [p.ADM0_A3, p.ISO_A3_EH, p.ISO_A3].some((v) => String(v || "").toUpperCase() === iso3);
+  });
+  return exact || matches[0] || null;
 }
 
 // ---------- Färbung ----------
@@ -274,7 +303,7 @@ function showCountrySidebar(c) {
 function updateSelectedCountryOutline(country) {
   const source = map?.getSource("selected-country-outline");
   if (!source) return;
-  const feature = country && geoData?.features.find((entry) => countryForFeature(entry)?.code === country.code);
+  const feature = country && featureForCountry(country);
   source.setData({
     type: "FeatureCollection",
     features: feature ? [feature] : [],
@@ -520,7 +549,7 @@ function createMap() {
 function jumpTo(name) {
   const country = countryByName.get(normalize(name));
   if (!country || !map || !geoData) return;
-  const feature = geoData.features.find((entry) => countryForFeature(entry)?.code === country.code);
+  const feature = featureForCountry(country);
   if (!feature) {
     setMapStatus(`„${country.name}“ ist auf dieser Karte nicht als Fläche enthalten (zu klein oder fehlt in den Kartendaten). `, { warn: true });
     setTimeout(hideMapStatus, 5000);

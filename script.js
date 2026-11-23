@@ -6,7 +6,7 @@
 
 const API_URL =
   "https://countries.dev/countries?fields=name,alpha2Code,alpha3Code,capital,region,subregion,area,population,topLevelDomain,independent";
-const CACHE_KEY = "flags-of-the-world:countries:v3";
+const CACHE_KEY = "flags-of-the-world:countries:v4";
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 Stunden
 const FETCH_TIMEOUT_MS = 10000;
 
@@ -120,15 +120,20 @@ function mapApiCountry(c) {
   };
 }
 
-// Nur souveräne Staaten (+ Palästina als UN-Beobachterstaat)
+// Basis sind die mitgelieferten 197 Länder aus data.js. Die API liefert nur die
+// aktuellen Werte dazu. So fehlt kein Land (und keins bleibt auf der Karte
+// leer), auch wenn die API eins auslässt oder anders kennzeichnet.
 function parseApiResponse(data) {
   if (!Array.isArray(data)) throw new Error("Unerwartetes Antwortformat");
-  const list = data
-    .filter((c) => c.independent !== false || String(c.cca2).toUpperCase() === "PS")
-    .map(mapApiCountry)
-    .filter(Boolean);
-  if (list.length < 150) throw new Error("Zu wenige Länder in der Antwort");
-  return list;
+  const byCode = new Map();
+  for (const c of data) {
+    const mapped = mapApiCountry(c);
+    if (mapped) byCode.set(mapped.code, mapped);
+  }
+  if (COUNTRIES.filter((c) => byCode.has(c.code)).length < 150) {
+    throw new Error("Zu wenige Länder in der Antwort");
+  }
+  return COUNTRIES.map((local) => byCode.get(local.code) || { ...local, tld: fallbackTld(local.code) });
 }
 
 async function fetchCountries() {
