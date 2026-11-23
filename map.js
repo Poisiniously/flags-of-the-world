@@ -644,18 +644,18 @@ function clipRingAtLongitude(ring, longitude, keepWest) {
   return output;
 }
 
-function splitRussia(feature) {
+function splitCountryByLongitude(feature, longitude, westContinent, eastContinent) {
   const west = [];
   const east = [];
   for (const polygon of feature.geometry.coordinates) {
-    const westRings = polygon.map((ring) => clipRingAtLongitude(ring, 60, true)).filter((ring) => ring.length);
-    const eastRings = polygon.map((ring) => clipRingAtLongitude(ring, 60, false)).filter((ring) => ring.length);
+    const westRings = polygon.map((ring) => clipRingAtLongitude(ring, longitude, true)).filter((ring) => ring.length);
+    const eastRings = polygon.map((ring) => clipRingAtLongitude(ring, longitude, false)).filter((ring) => ring.length);
     if (westRings.length) west.push(westRings);
     if (eastRings.length) east.push(eastRings);
   }
   return [
-    ...(west.length ? [{ ...feature, geometry: { type: "MultiPolygon", coordinates: west }, properties: { ...feature.properties, continentOverride: "Europa" } }] : []),
-    ...(east.length ? [{ ...feature, geometry: { type: "MultiPolygon", coordinates: east }, properties: { ...feature.properties, continentOverride: "Asien" } }] : []),
+    ...(west.length ? [{ ...feature, geometry: { type: "MultiPolygon", coordinates: west }, properties: { ...feature.properties, continentOverride: westContinent } }] : []),
+    ...(east.length ? [{ ...feature, geometry: { type: "MultiPolygon", coordinates: east }, properties: { ...feature.properties, continentOverride: eastContinent } }] : []),
   ];
 }
 
@@ -664,7 +664,12 @@ function splitOverseasParts(features) {
   const extra = [];
   for (const feature of features) {
     if (feature.id === "RUS" && feature.geometry?.type === "MultiPolygon") {
-      extra.push(...splitRussia(feature));
+      extra.push(...splitCountryByLongitude(feature, 60, "Europa", "Asien"));
+      continue;
+    }
+    if (feature.id === "TUR" && feature.geometry?.type === "MultiPolygon") {
+      // Die 29°-Linie ist eine Näherung entlang der Meerengen von Istanbul.
+      extra.push(...splitCountryByLongitude(feature, 29, "Europa", "Asien"));
       continue;
     }
     const rules = OVERSEAS_PARTS[feature.id];
