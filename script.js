@@ -16,10 +16,11 @@ const CONTINENTS = ["Europa", "Asien", "Afrika", "Nordamerika", "Südamerika", "
 
 let language = localStorage.getItem("fotw-language") || "de";
 const I18N = {
-  de: { capital:"Hauptstadt", continent:"Kontinent", domain:"Domain-Endung", area:"Fläche", population:"Einwohner", density:"Bevölkerungsdichte", code:"Ländercode", details:"Mehr Details", countries:"Länder", of:"von", all:"Alle", noData:"ohne Daten", noResults:"Keine Treffer. Versuch einen anderen Suchbegriff oder Filter. 🔎", search:"Land, Hauptstadt oder Domain-Endung suchen …", hint:"Klicke auf ein Land für Flagge und Infos. Mit Mausrad oder Pinch zoomen, mit gedrückter Maustaste verschieben." },
-  en: { capital:"Capital", continent:"Continent", domain:"Domain suffix", area:"Area", population:"Population", density:"Population density", code:"Country code", details:"More details", countries:"countries", of:"of", all:"All", noData:"no data", noResults:"No results. Try another search term or filter. 🔎", search:"Search country, capital or domain suffix …", hint:"Click a country to see its flag and information. Zoom with the wheel or pinch; drag to move." }
+  de: { capital:"Hauptstadt", continent:"Kontinent", domain:"Domain-Endung", area:"Fläche", population:"Einwohner", density:"Bevölkerungsdichte", code:"Ländercode", details:"Mehr Details", countries:"Länder", of:"von", all:"Alle", noData:"ohne Daten", noResults:"Keine Treffer. Versuch einen anderen Suchbegriff oder Filter. 🔎", search:"Land, Hauptstadt oder Domain-Endung suchen …", hint:"Klicke auf ein Land für Flagge und Infos. Mit Mausrad oder Pinch zoomen, mit gedrückter Maustaste verschieben.", loading:"Lade Länderdaten …", retry:"Erneut versuchen", live:"Live-Daten von countries.dev", cached:"Daten von countries.dev (Stand {time})", stale:"Online-Abruf fehlgeschlagen – zeige gespeicherte Daten vom {time}.", offline:"Online-Abruf fehlgeschlagen – zeige mitgelieferte Offline-Daten.", offlineSource:"Offline-Daten", cachedSource:"Zwischengespeicherte Daten", sort:"Sortieren nach", mapColor:"Einfärben nach", mapJump:"Zu Land springen", mapJumpPlaceholder:"Landesnamen eingeben …", searchLabel:"Suche", continentFilters:"Kontinent-Filter", flags:"Flaggen", map:"Karte", view:"Ansicht", controls:"Suche, Filter und Sortierung", mapSettings:"Karten-Einstellungen", worldMap:"Interaktive Weltkarte", legend:"Legende", close:"Schließen", flagAlt:"Flagge von {name}" },
+  en: { capital:"Capital", continent:"Continent", domain:"Domain suffix", area:"Area", population:"Population", density:"Population density", code:"Country code", details:"More details", countries:"countries", of:"of", all:"All", noData:"no data", noResults:"No results. Try another search term or filter. 🔎", search:"Search country, capital or domain suffix …", hint:"Click a country to see its flag and information. Zoom with the wheel or pinch; drag to move.", loading:"Loading country data …", retry:"Try again", live:"Live data from countries.dev", cached:"Data from countries.dev (as of {time})", stale:"Could not reach the API – showing saved data from {time}.", offline:"Could not reach the API – showing bundled offline data.", offlineSource:"Offline data", cachedSource:"Cached data", sort:"Sort by", mapColor:"Color by", mapJump:"Jump to country", mapJumpPlaceholder:"Enter a country name …", searchLabel:"Search", continentFilters:"Filter by continent", flags:"Flags", map:"Map", view:"View", controls:"Search, filters and sorting", mapSettings:"Map settings", worldMap:"Interactive world map", legend:"Legend", close:"Close", flagAlt:"Flag of {name}" }
 };
 const tr = key => I18N[language][key] || key;
+const localized = (key, values = {}) => Object.entries(values).reduce((text, [name, value]) => text.replaceAll(`{${name}}`, value), tr(key));
 function displayName(c) { return language === "en" ? (new Intl.DisplayNames(["en"], {type:"region"}).of(c.code.toUpperCase()) || c.name) : c.name; }
 function continentLabel(value) { return language === "de" ? value : ({Europa:"Europe",Asien:"Asia",Afrika:"Africa",Nordamerika:"North America",Südamerika:"South America",Ozeanien:"Oceania"}[value] || value); }
 function applyPreferences() {
@@ -35,6 +36,26 @@ function applyPreferences() {
   document.getElementById("map-color").innerHTML = language === "de" ? '<option value="continent">Kontinent</option><option value="population">Einwohnerzahl</option><option value="area">Fläche</option>' : '<option value="continent">Continent</option><option value="population">Population</option><option value="area">Area</option>';
   document.querySelector(".map-hint").textContent = tr("hint");
   document.getElementById("language-toggle").textContent = language === "de" ? "DE / EN" : "EN / DE";
+  document.title = language === "de" ? "Flags of the World – Alle Flaggen, Länder & Hauptstädte" : "Flags of the World – Countries, Flags & Capitals";
+  document.querySelector('meta[name="description"]').content = language === "de"
+    ? "Alle Flaggen der Welt mit Ländernamen und Hauptstädten – durchsuchbar, filterbar und sortierbar, dazu eine interaktive Weltkarte."
+    : "Explore the flags, countries and capitals of the world. Search, filter and sort countries or explore them on an interactive world map.";
+  document.querySelector(".tabs").setAttribute("aria-label", tr("view"));
+  document.getElementById("tab-flags").textContent = `🏳️ ${tr("flags")}`;
+  document.getElementById("tab-map").textContent = `🗺️ ${tr("map")}`;
+  document.querySelector("#view-flags .controls").setAttribute("aria-label", tr("controls"));
+  document.getElementById("search").setAttribute("aria-label", tr("searchLabel"));
+  document.getElementById("filters").setAttribute("aria-label", tr("continentFilters"));
+  document.getElementById("grid").setAttribute("aria-label", tr("flags"));
+  document.querySelector("#view-map .map-toolbar").setAttribute("aria-label", tr("mapSettings"));
+  document.getElementById("map").setAttribute("aria-label", tr("worldMap"));
+  document.getElementById("map-legend").setAttribute("aria-label", tr("legend"));
+  document.getElementById("sidebar-close").setAttribute("aria-label", tr("close"));
+  document.getElementById("modal-close").setAttribute("aria-label", tr("close"));
+  const footer = document.querySelector("footer p");
+  footer.innerHTML = language === "de"
+    ? 'Länderdaten von <a href="https://countries.dev" target="_blank" rel="noopener">countries.dev</a>, Flaggen von <a href="https://flagcdn.com" target="_blank" rel="noopener">flagcdn.com</a>, Karte mit <a href="https://maplibre.org/" target="_blank" rel="noopener">MapLibre GL JS</a> und Ländergrenzen von <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">Natural Earth</a>.'
+    : 'Country data from <a href="https://countries.dev" target="_blank" rel="noopener">countries.dev</a>, flags from <a href="https://flagcdn.com" target="_blank" rel="noopener">flagcdn.com</a>, mapping by <a href="https://maplibre.org/" target="_blank" rel="noopener">MapLibre GL JS</a>, and boundaries from <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">Natural Earth</a>.';
   render(); renderFilters();
   document.dispatchEvent(new CustomEvent("language-changed"));
 }
@@ -59,8 +80,8 @@ const state = {
 
 let items = [];
 
-const collator = new Intl.Collator("de", { sensitivity: "base" });
-const nf = new Intl.NumberFormat("de-DE");
+const collator = new Intl.Collator(language, { sensitivity: "base" });
+const nf = new Intl.NumberFormat(language === "de" ? "de-DE" : "en-US");
 
 // Lokale Daten (Fallback + deutsche Hauptstädte), nach Ländercode
 const LOCAL = new Map(COUNTRIES.map((c) => [c.code, c]));
@@ -229,7 +250,8 @@ function flagUrl(code, width) {
 }
 
 function formatArea(km2) {
-  return km2 < 1 ? `${km2.toString().replace(".", ",")} km²` : `${nf.format(Math.round(km2))} km²`;
+  const formatter = new Intl.NumberFormat(language === "de" ? "de-DE" : "en-US", { maximumFractionDigits: 1 });
+  return `${formatter.format(km2 < 1 ? km2 : Math.round(km2))} km²`;
 }
 
 // ---------- Rendering ----------
@@ -270,6 +292,7 @@ function render() {
           <span class="tld"></span>
         </div>
       </div>`;
+    card.querySelector(".flag-box img").alt = localized("flagAlt", { name: displayName(c) });
     card.querySelector("h3").textContent = displayName(c);
     card.querySelector(".capital").textContent = `${tr("capital")}: ${language === "en" ? (c.capitalEn || c.capital) : c.capital}`;
     card.querySelector(".continent").textContent = continentLabel(c.continent);
@@ -304,34 +327,34 @@ function renderFilters() {
 
 // ---------- Status / Datenquelle ----------
 function formatTime(ts) {
-  return new Date(ts).toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" });
+  return new Date(ts).toLocaleString(language === "de" ? "de-DE" : "en-US", { dateStyle: "short", timeStyle: "short" });
 }
 
 function showSource({ source, time }) {
-  const retry = '<button type="button" class="retry">Erneut versuchen</button>';
+  const retry = `<button type="button" class="retry">${tr("retry")}</button>`;
   statusEl.className = "status";
   statusEl.hidden = true;
 
   if (source === "live") {
-    sourceEl.textContent = "Live-Daten von countries.dev";
+    sourceEl.textContent = tr("live");
   } else if (source === "cache") {
-    sourceEl.textContent = `Daten von countries.dev (Stand ${formatTime(time)})`;
+    sourceEl.textContent = localized("cached", { time: formatTime(time) });
   } else if (source === "stale") {
     statusEl.className = "status warn";
-    statusEl.innerHTML = `Online-Abruf fehlgeschlagen – zeige gespeicherte Daten vom ${formatTime(time)}. ${retry}`;
+    statusEl.innerHTML = `${localized("stale", { time: formatTime(time) })} ${retry}`;
     statusEl.hidden = false;
-    sourceEl.textContent = "Zwischengespeicherte Daten";
+    sourceEl.textContent = tr("cachedSource");
   } else {
     statusEl.className = "status warn";
-    statusEl.innerHTML = `Online-Abruf fehlgeschlagen – zeige mitgelieferte Offline-Daten. ${retry}`;
+    statusEl.innerHTML = `${tr("offline")} ${retry}`;
     statusEl.hidden = false;
-    sourceEl.textContent = "Offline-Daten";
+    sourceEl.textContent = tr("offlineSource");
   }
 }
 
 async function init(forceReload = false) {
   statusEl.className = "status";
-  statusEl.textContent = "Lade Länderdaten …";
+  statusEl.textContent = tr("loading");
   statusEl.hidden = false;
 
   const result = await loadData(forceReload);
@@ -375,7 +398,7 @@ function openModal(code) {
   lastFocus = document.activeElement;
 
   modalFlag.src = flagUrl(c.code, 640);
-  modalFlag.alt = `Flagge von ${c.name}`;
+  modalFlag.alt = localized("flagAlt", { name: displayName(c) });
   modalTitle.textContent = displayName(c);
 
   const density = c.area > 0 ? c.population / c.area : 0;
