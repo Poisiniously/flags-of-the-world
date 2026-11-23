@@ -615,10 +615,58 @@ const OVERSEAS_PARTS = {
   ],
 };
 
+// Russland wird für die Kontinent-Ansicht entlang des 60. östlichen
+// Längengrads geteilt. Das ist eine kartografische Näherung der Europa-Asien-Grenze.
+function clipRingAtLongitude(ring, longitude, keepWest) {
+  if (!Array.isArray(ring) || ring.length < 4) return [];
+  const inside = ([x]) => keepWest ? x <= longitude : x >= longitude;
+  const intersection = (a, b) => {
+    const t = (longitude - a[0]) / (b[0] - a[0]);
+    return [longitude, a[1] + t * (b[1] - a[1])];
+  };
+  const input = ring.slice(0, -1);
+  const output = [];
+  let previous = input[input.length - 1];
+  let previousInside = inside(previous);
+  for (const current of input) {
+    const currentInside = inside(current);
+    if (currentInside) {
+      if (!previousInside) output.push(intersection(previous, current));
+      output.push(current);
+    } else if (previousInside) {
+      output.push(intersection(previous, current));
+    }
+    previous = current;
+    previousInside = currentInside;
+  }
+  if (output.length < 3) return [];
+  output.push(output[0]);
+  return output;
+}
+
+function splitRussia(feature) {
+  const west = [];
+  const east = [];
+  for (const polygon of feature.geometry.coordinates) {
+    const westRings = polygon.map((ring) => clipRingAtLongitude(ring, 60, true)).filter((ring) => ring.length);
+    const eastRings = polygon.map((ring) => clipRingAtLongitude(ring, 60, false)).filter((ring) => ring.length);
+    if (westRings.length) west.push(westRings);
+    if (eastRings.length) east.push(eastRings);
+  }
+  return [
+    ...(west.length ? [{ ...feature, geometry: { type: "MultiPolygon", coordinates: west }, properties: { ...feature.properties, continentOverride: "Europa" } }] : []),
+    ...(east.length ? [{ ...feature, geometry: { type: "MultiPolygon", coordinates: east }, properties: { ...feature.properties, continentOverride: "Asien" } }] : []),
+  ];
+}
+
 function splitOverseasParts(features) {
   const main = [];
   const extra = [];
   for (const feature of features) {
+    if (feature.id === "RUS" && feature.geometry?.type === "MultiPolygon") {
+      extra.push(...splitRussia(feature));
+      continue;
+    }
     const rules = OVERSEAS_PARTS[feature.id];
     if (!rules || !feature.geometry || feature.geometry.type !== "MultiPolygon") {
       main.push(feature);
