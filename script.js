@@ -10,11 +10,22 @@ const CACHE_KEY = "flags-of-the-world:countries:v4";
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 Stunden
 const FETCH_TIMEOUT_MS = 10000;
 
+function storageGet(key) {
+  try { return localStorage.getItem(key); }
+  catch (_) { return null; }
+}
+
+function storageSet(key, value) {
+  try { localStorage.setItem(key, value); return true; }
+  catch (_) { return false; }
+}
+
 // Reihenfolge der Kontinente (für Filter und Kontinent-Sortierung)
 const CONTINENTS = ["Europa", "Asien", "Afrika", "Nordamerika", "Südamerika", "Ozeanien"];
 
 
-let language = localStorage.getItem("fotw-language") || "de";
+let language = storageGet("fotw-language");
+if (language !== "de" && language !== "en") language = "de";
 const I18N = {
   de: { capital:"Hauptstadt", continent:"Kontinent", domain:"Domain-Endung", area:"Fläche", population:"Einwohner", density:"Bevölkerungsdichte", code:"Ländercode", details:"Mehr Details", countries:"Länder", of:"von", all:"Alle", noData:"ohne Daten", noResults:"Keine Treffer. Versuch einen anderen Suchbegriff oder Filter. 🔎", search:"Land, Hauptstadt oder Domain-Endung suchen …", hint:"Klicke auf ein Land für Flagge und Infos. Mit Mausrad oder Pinch zoomen, mit gedrückter Maustaste verschieben.", loading:"Lade Länderdaten …", retry:"Erneut versuchen", live:"Live-Daten von countries.dev", cached:"Daten von countries.dev (Stand {time})", stale:"Online-Abruf fehlgeschlagen – zeige gespeicherte Daten vom {time}.", offline:"Online-Abruf fehlgeschlagen – zeige mitgelieferte Offline-Daten.", offlineSource:"Offline-Daten", cachedSource:"Zwischengespeicherte Daten", sort:"Sortieren nach", mapColor:"Einfärben nach", mapJump:"Zu Land springen", mapJumpPlaceholder:"Landesnamen eingeben …", searchLabel:"Suche", continentFilters:"Kontinent-Filter", flags:"Flaggen", map:"Karte", view:"Ansicht", controls:"Suche, Filter und Sortierung", mapSettings:"Karten-Einstellungen", worldMap:"Interaktive Weltkarte", legend:"Legende", close:"Schließen", flagAlt:"Flagge von {name}" },
   en: { capital:"Capital", continent:"Continent", domain:"Domain suffix", area:"Area", population:"Population", density:"Population density", code:"Country code", details:"More details", countries:"countries", of:"of", all:"All", noData:"no data", noResults:"No results. Try another search term or filter. 🔎", search:"Search country, capital or domain suffix …", hint:"Click a country to see its flag and information. Zoom with the wheel or pinch; drag to move.", loading:"Loading country data …", retry:"Try again", live:"Live data from countries.dev", cached:"Data from countries.dev (as of {time})", stale:"Could not reach the API – showing saved data from {time}.", offline:"Could not reach the API – showing bundled offline data.", offlineSource:"Offline data", cachedSource:"Cached data", sort:"Sort by", mapColor:"Color by", mapJump:"Jump to country", mapJumpPlaceholder:"Enter a country name …", searchLabel:"Search", continentFilters:"Filter by continent", flags:"Flags", map:"Map", view:"View", controls:"Search, filters and sorting", mapSettings:"Map settings", worldMap:"Interactive world map", legend:"Legend", close:"Close", flagAlt:"Flag of {name}" }
@@ -63,15 +74,16 @@ function applyPreferences() {
 }
 document.getElementById("language-toggle").addEventListener("click", () => {
   language = language === "de" ? "en" : "de";
-  localStorage.setItem("fotw-language", language);
+  storageSet("fotw-language", language);
   applyPreferences();
 });
 function setTheme(value) {
   document.documentElement.dataset.theme = value;
   document.getElementById("theme-toggle").textContent = value === "dark" ? "☀️ Light" : "🌙 Dark";
-  localStorage.setItem("fotw-theme", value);
+  storageSet("fotw-theme", value);
 }
-setTheme(localStorage.getItem("fotw-theme") || "dark");
+const savedTheme = storageGet("fotw-theme");
+setTheme(savedTheme === "light" || savedTheme === "dark" ? savedTheme : "dark");
 document.getElementById("theme-toggle").addEventListener("click", () => setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark"));
 
 const state = {
@@ -173,7 +185,7 @@ async function fetchCountries() {
 
 function readCache() {
   try {
-    const raw = JSON.parse(localStorage.getItem(CACHE_KEY));
+    const raw = JSON.parse(storageGet(CACHE_KEY));
     const validTimestamp =
       raw && Number.isFinite(raw.time) && raw.time > 0 && raw.time <= Date.now() + 5 * 60 * 1000;
     const validData =
@@ -198,7 +210,7 @@ function readCache() {
 
 function writeCache(data) {
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ time: Date.now(), data }));
+    storageSet(CACHE_KEY, JSON.stringify({ time: Date.now(), data }));
   } catch (_) { /* z. B. privater Modus */ }
 }
 
@@ -280,25 +292,33 @@ function render() {
     card.className = "card";
     card.type = "button";
     card.dataset.code = c.code;
-    card.innerHTML = `
-      <div class="flag-box">
-        <img loading="lazy" src="${flagUrl(c.code, 320)}"
-             srcset="${flagUrl(c.code, 320)} 1x, ${flagUrl(c.code, 640)} 2x"
-             alt="Flagge von ${c.name}" />
-      </div>
-      <div class="card-body">
-        <h3></h3>
-        <p class="capital"></p>
-        <div class="tags">
-          <span class="continent"></span>
-          <span class="tld"></span>
-        </div>
-      </div>`;
-    card.querySelector(".flag-box img").alt = localized("flagAlt", { name: displayName(c) });
-    card.querySelector("h3").textContent = displayName(c);
-    card.querySelector(".capital").textContent = `${tr("capital")}: ${language === "en" ? (c.capitalEn || c.capital) : c.capital}`;
-    card.querySelector(".continent").textContent = continentLabel(c.continent);
-    card.querySelector(".tld").textContent = c.tld;
+    const flagBox = document.createElement("div");
+    flagBox.className = "flag-box";
+    const flag = document.createElement("img");
+    flag.loading = "lazy";
+    flag.src = flagUrl(c.code, 320);
+    flag.srcset = `${flagUrl(c.code, 320)} 1x, ${flagUrl(c.code, 640)} 2x`;
+    flag.alt = localized("flagAlt", { name: displayName(c) });
+    flagBox.appendChild(flag);
+
+    const body = document.createElement("div");
+    body.className = "card-body";
+    const title = document.createElement("h3");
+    title.textContent = displayName(c);
+    const capital = document.createElement("p");
+    capital.className = "capital";
+    capital.textContent = `${tr("capital")}: ${language === "en" ? (c.capitalEn || c.capital) : c.capital}`;
+    const tags = document.createElement("div");
+    tags.className = "tags";
+    const continent = document.createElement("span");
+    continent.className = "continent";
+    continent.textContent = continentLabel(c.continent);
+    const tld = document.createElement("span");
+    tld.className = "tld";
+    tld.textContent = c.tld;
+    tags.append(continent, tld);
+    body.append(title, capital, tags);
+    card.append(flagBox, body);
     frag.appendChild(card);
   }
   grid.appendChild(frag);
@@ -317,7 +337,11 @@ function renderFilters() {
     btn.type = "button";
     btn.className = "chip" + (state.continent === name ? " active" : "");
     btn.setAttribute("aria-pressed", state.continent === name);
-    btn.innerHTML = `${name === "Alle" ? tr("all") : name}<small>${counts[name] || 0}</small>`;
+    const label = document.createElement("span");
+    label.textContent = name === "Alle" ? tr("all") : continentLabel(name);
+    const count = document.createElement("small");
+    count.textContent = String(counts[name] || 0);
+    btn.append(label, count);
     btn.addEventListener("click", () => {
       state.continent = name;
       renderFilters();
@@ -354,18 +378,29 @@ function showSource({ source, time }) {
   }
 }
 
+let dataInitPromise = null;
 async function init(forceReload = false) {
-  statusEl.className = "status";
-  statusEl.textContent = tr("loading");
-  statusEl.hidden = false;
+  if (dataInitPromise) return dataInitPromise;
 
-  const result = await loadData(forceReload);
-  items = result.list.map(withSearchText);
-  showSource(result);
-  renderFilters();
-  render();
-  // Andere Ansichten (z. B. die Karte) können sich damit aktualisieren
-  document.dispatchEvent(new CustomEvent("countries-updated"));
+  dataInitPromise = (async () => {
+    statusEl.className = "status";
+    statusEl.textContent = tr("loading");
+    statusEl.hidden = false;
+
+    const result = await loadData(forceReload);
+    items = result.list.map(withSearchText);
+    showSource(result);
+    renderFilters();
+    render();
+    updateSuggestions();
+    document.dispatchEvent(new CustomEvent("countries-updated"));
+  })();
+
+  try {
+    await dataInitPromise;
+  } finally {
+    dataInitPromise = null;
+  }
 }
 
 statusEl.addEventListener("click", (e) => {
@@ -430,7 +465,7 @@ function openModal(code) {
 function closeModal() {
   modal.hidden = true;
   document.body.classList.remove("modal-open");
-  if (lastFocus) lastFocus.focus();
+  if (lastFocus?.isConnected) lastFocus.focus();
 }
 
 grid.addEventListener("click", (e) => {
@@ -442,7 +477,31 @@ modal.addEventListener("click", (e) => {
   if (e.target === modal) closeModal();
 });
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && !modal.hidden) closeModal();
+  if (modal.hidden) return;
+  if (e.key === "Escape") {
+    closeModal();
+    return;
+  }
+  if (e.key !== "Tab") return;
+
+  const dialog = modal.querySelector('[role="dialog"]');
+  const focusable = Array.from(dialog.querySelectorAll(
+    'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  )).filter((element) => element.getClientRects().length > 0);
+  if (!focusable.length) {
+    e.preventDefault();
+    return;
+  }
+
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (e.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) {
+    e.preventDefault();
+    first.focus();
+  }
 });
 
 // ---------- Start ----------
@@ -454,7 +513,7 @@ function updateSuggestions() {
   const q = normalize(searchInput.value);
   suggestionBox.innerHTML = "";
   if (!q) { suggestionBox.hidden = true; searchInput.setAttribute("aria-expanded","false"); return; }
-  const matches = items.filter(c => normalize(c.name + " " + displayName(c) + " " + c.capital + " " + c.code + " " + c.tld).includes(q)).slice(0,7);
+  const matches = items.filter(c => normalize(c.name + " " + displayName(c) + " " + c.capital + " " + (c.capitalEn || "") + " " + c.code + " " + c.tld).includes(q)).slice(0,7);
   for (const c of matches) {
     const b = document.createElement("button"); b.type = "button"; b.className = "suggestion"; b.setAttribute("role","option");
     const img = document.createElement("img"); img.src = flagUrl(c.code,80); img.alt = "";
