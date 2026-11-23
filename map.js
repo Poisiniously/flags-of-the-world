@@ -105,12 +105,22 @@ const mapJumpEl = document.getElementById("map-jump");
 const mapJumpSuggestions = document.getElementById("map-jump-suggestions");
 
 // ---------- Status ----------
-const RETRY_BTN = () => ` <button type="button" class="retry">${tr("retry")}</button>`;
-
-function setMapStatus(content, { warn = false, html = false } = {}) {
+function setMapStatus(content, { warn = false, retry = false } = {}) {
   mapStatusEl.className = "status" + (warn ? " warn" : "");
-  if (html) mapStatusEl.innerHTML = content;
-  else mapStatusEl.textContent = content;
+  mapStatusEl.replaceChildren();
+
+  const message = document.createElement("span");
+  message.textContent = content;
+  mapStatusEl.appendChild(message);
+
+  if (retry) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "retry";
+    button.textContent = tr("retry");
+    mapStatusEl.append(" ", button);
+  }
+
   mapStatusEl.hidden = false;
 }
 
@@ -723,7 +733,7 @@ async function startMap() {
           ? (language === "de" ? "Die Kartenbibliothek (MapLibre GL JS) konnte nicht geladen werden." : "The map library (MapLibre GL JS) could not be loaded.")
           : (language === "de" ? "Die Karte konnte nicht geladen werden." : "The map could not be loaded.");
       const detail = err && err.message ? ` (${err.message})` : "";
-      setMapStatus(msg + detail + RETRY_BTN(), { warn: true, html: true });
+      setMapStatus(msg + detail, { warn: true, retry: true });
     }
   }).finally(() => {
     mapStartPromise = null;
