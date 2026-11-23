@@ -380,7 +380,7 @@ function updateMapSuggestions() {
     const name = document.createElement("span");
     name.textContent = displayName(country);
     const capital = document.createElement("small");
-    capital.textContent = country.capital;
+    capital.textContent = language === "en" ? (country.capitalEn || country.capital) : country.capital;
     option.append(flag, name, capital);
     option.addEventListener("click", () => {
       mapJumpEl.value = displayName(country);
