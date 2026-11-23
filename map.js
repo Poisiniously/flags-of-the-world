@@ -134,6 +134,8 @@ const GEO_ALIASES = {
   CYN: "CYP", // Nordzypern → Zypern
   KOS: "XKX", // Kosovo
   PSX: "PSE", // Palästina
+  GRL: "DNK", // Grönland gehört zu Dänemark
+  SAH: "MAR", // Westsahara: völkerrechtlich umstritten, hier wie Marokko eingefärbt
 };
 
 function countryForFeature(feature) {
