@@ -206,10 +206,45 @@ function featureIdForCountry(c) {
   return String(c.iso3 || ISO3_BY_CODE[c.code] || "").toUpperCase();
 }
 
+function polygonOuterRingArea(polygon) {
+  const ring = polygon?.[0] || [];
+  let sum = 0;
+  for (let i = 0; i < ring.length - 1; i++) {
+    sum += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1];
+  }
+  return Math.abs(sum / 2);
+}
+
 function mapFeatureCollection() {
+  // Kleine, separat gezeichnete GeoJSON-Polygone innerhalb Kasachstans
+  // müssen aus der Kartenquelle entfernt werden, nicht nur aus der Auswahlkontur.
+  const kazakhstanFeatures = geoData.features.filter(
+    (feature) => countryForFeature(feature)?.code === "kz"
+  );
+  const kazakhstanAreas = kazakhstanFeatures.flatMap((feature) => {
+    const geometry = feature.geometry;
+    if (geometry?.type === "Polygon") return [polygonOuterRingArea(geometry.coordinates)];
+    if (geometry?.type === "MultiPolygon") return geometry.coordinates.map(polygonOuterRingArea);
+    return [];
+  });
+  const largestKazakhstanArea = Math.max(0, ...kazakhstanAreas);
+  const minimumKazakhstanArea = largestKazakhstanArea * 0.001;
+
   return {
     type: "FeatureCollection",
-    features: geoData.features.map((feature) => {
+    features: geoData.features
+      .filter((feature) => {
+        if (countryForFeature(feature)?.code !== "kz") return true;
+        const geometry = feature.geometry;
+        if (geometry?.type === "Polygon") {
+          return polygonOuterRingArea(geometry.coordinates) >= minimumKazakhstanArea;
+        }
+        if (geometry?.type === "MultiPolygon") {
+          return geometry.coordinates.some((polygon) => polygonOuterRingArea(polygon) >= minimumKazakhstanArea);
+        }
+        return true;
+      })
+      .map((feature) => {
       const c = countryForFeature(feature);
       const id = c ? featureIdForCountry(c) : feature.id;
       return {
