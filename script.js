@@ -151,8 +151,25 @@ async function fetchCountries() {
 function readCache() {
   try {
     const raw = JSON.parse(localStorage.getItem(CACHE_KEY));
-    if (raw && Array.isArray(raw.data) && raw.data.length >= 150) return raw;
-  } catch (_) { /* Cache nicht verfügbar */ }
+    const validTimestamp =
+      raw && Number.isFinite(raw.time) && raw.time > 0 && raw.time <= Date.now() + 5 * 60 * 1000;
+    const validData =
+      raw &&
+      Array.isArray(raw.data) &&
+      raw.data.length >= 150 &&
+      raw.data.every((country) =>
+        country &&
+        typeof country.code === "string" &&
+        typeof country.name === "string" &&
+        typeof country.capital === "string" &&
+        typeof country.continent === "string" &&
+        typeof country.tld === "string" &&
+        Number.isFinite(country.area) &&
+        Number.isFinite(country.population)
+      );
+
+    if (validTimestamp && validData) return raw;
+  } catch (_) { /* Cache nicht verfügbar oder ungültiges JSON */ }
   return null;
 }
 
@@ -166,10 +183,12 @@ function offlineFallback() {
   return COUNTRIES.map((c) => ({ ...c, tld: fallbackTld(c.code) }));
 }
 
-// Reihenfolge: frischer Cache → Live-API → alter Cache → mitgelieferte Daten
-async function loadData() {
+// Reihenfolge: frischer Cache → Live-API → alter Cache → mitgelieferte Daten.
+// Bei einem erzwungenen Abruf wird der Cache übersprungen, aber nicht vorab gelöscht:
+// So bleibt er als Fallback erhalten, falls die API nicht erreichbar ist.
+async function loadData(forceReload = false) {
   const cached = readCache();
-  if (cached && Date.now() - cached.time < CACHE_TTL_MS) {
+  if (!forceReload && cached && Date.now() - cached.time < CACHE_TTL_MS) {
     return { list: cached.data, source: "cache", time: cached.time };
   }
   try {
@@ -314,11 +333,8 @@ async function init(forceReload = false) {
   statusEl.className = "status";
   statusEl.textContent = "Lade Länderdaten …";
   statusEl.hidden = false;
-  if (forceReload) {
-    try { localStorage.removeItem(CACHE_KEY); } catch (_) {}
-  }
 
-  const result = await loadData();
+  const result = await loadData(forceReload);
   items = result.list.map(withSearchText);
   showSource(result);
   renderFilters();
