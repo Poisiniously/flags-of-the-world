@@ -11,12 +11,12 @@ import * as maplibregl from "https://unpkg.com/maplibre-gl@6.19.0/dist/maplibre-
 const GEOJSON_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_admin_0_countries.geojson";
 
 const CONTINENT_COLORS = {
-  Europa: "#6c8cff",
-  Asien: "#ff7a90",
-  Afrika: "#ffb454",
-  Nordamerika: "#4cd7a5",
-  Südamerika: "#c28bff",
-  Ozeanien: "#4cc9f0",
+  Europa: "#173b8f",       // Dunkelblau
+  Asien: "#176b3a",        // Dunkelgrün
+  Nordamerika: "#f2cf32",  // Gelb
+  Südamerika: "#ed8428",   // Orange
+  Afrika: "#d93636",       // Rot
+  Ozeanien: "#8746b8",     // Lila
 };
 const NEUTRAL_FILL = "#2b3263";
 const SCALE_COLORS = ["#2f3d8f", "#4358c9", "#6a73ee", "#9a6df2", "#c867ee", "#ff7ad2"];
