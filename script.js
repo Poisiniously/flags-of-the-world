@@ -284,7 +284,7 @@ function render() {
       : `${list.length} ${tr("of")} ${items.length} ${tr("countries")}`;
   emptyEl.hidden = list.length > 0 || items.length === 0;
 
-  grid.innerHTML = "";
+  grid.replaceChildren();
   const frag = document.createDocumentFragment();
 
   for (const c of list) {
@@ -331,7 +331,7 @@ function renderFilters() {
   const counts = { Alle: items.length };
   for (const c of items) counts[c.continent] = (counts[c.continent] || 0) + 1;
 
-  filtersEl.innerHTML = "";
+  filtersEl.replaceChildren();
   for (const name of ["Alle", ...CONTINENTS]) {
     const btn = document.createElement("button");
     btn.type = "button";
@@ -356,24 +356,36 @@ function formatTime(ts) {
   return new Date(ts).toLocaleString(language === "de" ? "de-DE" : "en-US", { dateStyle: "short", timeStyle: "short" });
 }
 
+function setDataStatus(message, { warn = false, retry = false } = {}) {
+  statusEl.className = "status" + (warn ? " warn" : "");
+  statusEl.replaceChildren();
+  const text = document.createElement("span");
+  text.textContent = message;
+  statusEl.appendChild(text);
+
+  if (retry) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "retry";
+    button.textContent = tr("retry");
+    statusEl.append(" ", button);
+  }
+  statusEl.hidden = false;
+}
+
 function showSource({ source, time }) {
-  const retry = `<button type="button" class="retry">${tr("retry")}</button>`;
-  statusEl.className = "status";
   statusEl.hidden = true;
+  statusEl.replaceChildren();
 
   if (source === "live") {
     sourceEl.textContent = tr("live");
   } else if (source === "cache") {
     sourceEl.textContent = localized("cached", { time: formatTime(time) });
   } else if (source === "stale") {
-    statusEl.className = "status warn";
-    statusEl.innerHTML = `${localized("stale", { time: formatTime(time) })} ${retry}`;
-    statusEl.hidden = false;
+    setDataStatus(localized("stale", { time: formatTime(time) }), { warn: true, retry: true });
     sourceEl.textContent = tr("cachedSource");
   } else {
-    statusEl.className = "status warn";
-    statusEl.innerHTML = `${tr("offline")} ${retry}`;
-    statusEl.hidden = false;
+    setDataStatus(tr("offline"), { warn: true, retry: true });
     sourceEl.textContent = tr("offlineSource");
   }
 }
@@ -448,7 +460,7 @@ function openModal(code) {
     [tr("density"), `${nf.format(Math.round(density))} / km²`],
     [tr("code"), c.code.toUpperCase()],
   ];
-  modalInfo.innerHTML = "";
+  modalInfo.replaceChildren();
   for (const [k, v] of rows) {
     const dt = document.createElement("dt");
     const dd = document.createElement("dd");
@@ -511,7 +523,7 @@ const suggestionBox = document.getElementById("search-suggestions");
 const searchInput = document.getElementById("search");
 function updateSuggestions() {
   const q = normalize(searchInput.value);
-  suggestionBox.innerHTML = "";
+  suggestionBox.replaceChildren();
   if (!q) { suggestionBox.hidden = true; searchInput.setAttribute("aria-expanded","false"); return; }
   const matches = items.filter(c => normalize(c.name + " " + displayName(c) + " " + c.capital + " " + (c.capitalEn || "") + " " + c.code + " " + c.tld).includes(q)).slice(0,7);
   for (const c of matches) {
