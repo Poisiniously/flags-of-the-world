@@ -40,6 +40,7 @@ const SCALES = {
 let map = null;
 let geoData = null;
 let mapStarted = false;
+let mapStartPromise = null;
 let colorMode = "continent";
 let selectedCountry = null;
 
@@ -525,7 +526,7 @@ function buildLayer() {
 }
 
 function createMap() {
-  map = new maplibregl.Map({
+  const instance = new maplibregl.Map({
     container: "map",
     style: {
       version: 8,
@@ -549,13 +550,16 @@ function createMap() {
     touchZoomRotate: true,
     attributionControl: true,
   });
+  map = instance;
   // Touch-Pinch darf zoomen, aber nicht die Karte drehen.
-  map.touchZoomRotate.disableRotation();
-  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+  instance.touchZoomRotate.disableRotation();
+  instance.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
   return new Promise((resolve, reject) => {
-    map.once("load", resolve);
-    map.once("error", (event) => {
-      if (!map.isStyleLoaded()) reject(event.error || new Error("MapLibre konnte nicht initialisiert werden"));
+    instance.once("load", () => resolve(instance));
+    instance.once("error", (event) => {
+      if (!instance.isStyleLoaded()) {
+        reject(event.error || new Error("MapLibre konnte nicht initialisiert werden"));
+      }
     });
   });
 }
@@ -679,40 +683,64 @@ async function fetchGeo() {
 
 async function startMap() {
   if (mapStarted) return;
-  mapStarted = true;
-  setMapStatus(language === "de" ? "Lade Karte …" : "Loading map …");
+  if (mapStartPromise) return mapStartPromise;
 
-  try {
-    if (typeof maplibregl === "undefined") throw new Error("maplibre");
-    // Die Karte sofort initialisieren; Länder- und Geodaten parallel laden.
-    if (!map) await createMap();
-    await Promise.all([dataReady, fetchGeo()]);
-    if (!items.some((c) => c.iso3 || ISO3_BY_CODE[c.code])) throw new Error("no-country-codes");
-    buildLayer();
-    renderLegend();
-    updateMapSuggestions();
-    hideMapStatus();
-    map.resize();
-  } catch (err) {
-    console.warn("Karte konnte nicht geladen werden:", err);
-    mapStarted = false;
-    const msg =
-      err.message === "no-country-codes"
-        ? (language === "de" ? "Die ISO-Ländercodes für die Kartenzuordnung konnten nicht ermittelt werden." : "Could not determine ISO country codes for the map.")
-        : err.message === "maplibre"
-        ? (language === "de" ? "Die Kartenbibliothek (MapLibre GL JS) konnte nicht geladen werden." : "The map library (MapLibre GL JS) could not be loaded.")
-        : (language === "de" ? "Die Karte konnte nicht geladen werden." : "The map could not be loaded.");
-    const detail = err && err.message ? ` (${err.message})` : "";
-    setMapStatus(msg + detail + RETRY_BTN(), { warn: true, html: true });
-  }
+  mapStartPromise = (async () => {
+    setMapStatus(language === "de" ? "Lade Karte …" : "Loading map …");
+
+    try {
+      if (typeof maplibregl === "undefined") throw new Error("maplibre");
+      // Die Karte sofort initialisieren; Länder- und Geodaten parallel laden.
+      if (!map) await createMap();
+      await Promise.all([dataReady, fetchGeo()]);
+      if (!items.some((c) => c.iso3 || ISO3_BY_CODE[c.code])) throw new Error("no-country-codes");
+      buildLayer();
+      renderLegend();
+      updateMapSuggestions();
+      map.resize();
+      mapStarted = true;
+      hideMapStatus();
+    } catch (err) {
+      console.warn("Karte konnte nicht geladen werden:", err);
+      mapStarted = false;
+
+      // Eine fehlgeschlagene MapLibre-Instanz kann nicht zuverlässig erneut
+      // geladen werden. Entfernen und beim nächsten Versuch frisch erzeugen.
+      if (map) {
+        try { map.remove(); } catch (removeError) {
+          console.warn("Fehlerhafte Karteninstanz konnte nicht entfernt werden:", removeError);
+        }
+      }
+      map = null;
+      mapInteractionsReady = false;
+      hoveredFeatureId = null;
+      featureIdByCode.clear();
+
+      const msg =
+        err.message === "no-country-codes"
+          ? (language === "de" ? "Die ISO-Ländercodes für die Kartenzuordnung konnten nicht ermittelt werden." : "Could not determine ISO country codes for the map.")
+          : err.message === "maplibre"
+          ? (language === "de" ? "Die Kartenbibliothek (MapLibre GL JS) konnte nicht geladen werden." : "The map library (MapLibre GL JS) could not be loaded.")
+          : (language === "de" ? "Die Karte konnte nicht geladen werden." : "The map could not be loaded.");
+      const detail = err && err.message ? ` (${err.message})` : "";
+      setMapStatus(msg + detail + RETRY_BTN(), { warn: true, html: true });
+    } finally {
+      mapStartPromise = null;
+    }
+  })();
+
+  return mapStartPromise;
 }
 
 // ---------- Ereignisse ----------
 document.getElementById("sidebar-close")?.addEventListener("click", hideCountrySidebar);
 mapStatusEl.addEventListener("click", async (e) => {
-  if (!e.target.closest(".retry")) return;
-  if (!items.some((c) => c.iso3)) await init(true);
-  startMap();
+  const retryButton = e.target.closest(".retry");
+  if (!retryButton) return;
+
+  retryButton.disabled = true;
+  retryButton.textContent = language === "de" ? "Wird erneut versucht …" : "Retrying …";
+  await startMap();
 });
 
 mapColorEl.addEventListener("change", () => {
