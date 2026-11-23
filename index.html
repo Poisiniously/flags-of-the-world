@@ -15,7 +15,7 @@
     <p class="subtitle">Alle Flaggen der Welt mit Ländernamen und Hauptstädten</p>
   </header>
 
-  <nav class="tabs" role="tablist" aria-label="Ansicht">
+  <nav class="tabs" role="tablist" aria-label="View">
     <button class="tab active" id="tab-flags" role="tab" aria-selected="true" aria-controls="view-flags" data-view="flags">🏳️ Flaggen</button>
     <button class="tab" id="tab-map" role="tab" aria-selected="false" aria-controls="view-map" data-view="map">🗺️ Karte</button>
   </nav>
@@ -23,21 +23,21 @@
   <main>
     <!-- ========== Ansicht: Flaggen ========== -->
     <div id="view-flags" role="tabpanel" aria-labelledby="tab-flags">
-      <section class="controls" aria-label="Suche, Filter und Sortierung">
+      <section class="controls" aria-label="Search, filters and sorting">
         <div class="search-wrap">
-          <input id="search" type="search" placeholder="Land, Hauptstadt oder Domain-Endung suchen …" autocomplete="off" aria-label="Suche" aria-controls="search-suggestions" aria-expanded="false" /><div id="search-suggestions" class="suggestions" role="listbox" hidden></div>
+          <input id="search" type="search" placeholder="Search country, capital or domain suffix …" autocomplete="off" aria-label="Search" aria-controls="search-suggestions" aria-expanded="false" /><div id="search-suggestions" class="suggestions" role="listbox" hidden></div>
         </div>
 
         <div class="sort-wrap">
-          <label for="sort">Sortieren nach</label>
+          <label for="sort">Sort by</label>
           <select id="sort">
             <option value="name-asc">Alphabet (A–Z)</option>
             <option value="name-desc">Alphabet (Z–A)</option>
-            <option value="continent">Kontinent</option>
-            <option value="area-desc">Größe (größte zuerst)</option>
-            <option value="area-asc">Größe (kleinste zuerst)</option>
-            <option value="pop-desc">Einwohner (meiste zuerst)</option>
-            <option value="pop-asc">Einwohner (wenigste zuerst)</option>
+            <option value="continent">Continent</option>
+            <option value="area-desc">Area (largest first)</option>
+            <option value="area-asc">Area (smallest first)</option>
+            <option value="pop-desc">Population (largest first)</option>
+            <option value="pop-asc">Population (smallest first)</option>
           </select>
         </div>
 
@@ -47,25 +47,25 @@
       <div id="status" class="status" role="status" aria-live="polite" hidden></div>
       <p class="count"><span id="count" aria-live="polite"></span> <span id="source" class="source"></span></p>
 
-      <section id="grid" class="grid" aria-label="Flaggen"></section>
-      <p id="empty" class="empty" hidden>Keine Treffer. Versuch einen anderen Suchbegriff oder Filter. 🔎</p>
+      <section id="grid" class="grid" aria-label="Flags"></section>
+      <p id="empty" class="empty" hidden>No results. Try another search term or filter. 🔎</p>
     </div>
 
     <!-- ========== Ansicht: Karte ========== -->
     <div id="view-map" role="tabpanel" aria-labelledby="tab-map" hidden>
-      <section class="map-toolbar" aria-label="Karten-Einstellungen">
+      <section class="map-toolbar" aria-label="Map settings">
         <div class="map-field">
-          <label for="map-color">Einfärben nach</label>
+          <label for="map-color">Color by</label>
           <select id="map-color">
-            <option value="continent">Kontinent</option>
-            <option value="population">Einwohnerzahl</option>
-            <option value="area">Fläche</option>
+            <option value="continent">Continent</option>
+            <option value="population">Population</option>
+            <option value="area">Area</option>
           </select>
         </div>
         <div class="map-field map-field-grow">
-          <label for="map-jump">Zu Land springen</label>
+          <label for="map-jump">Jump to country</label>
           <div class="map-search-wrap">
-            <input id="map-jump" type="search" placeholder="Land, Hauptstadt oder Code suchen …" autocomplete="off" aria-controls="map-jump-suggestions" aria-expanded="false" />
+            <input id="map-jump" type="search" placeholder="Search country, capital or code …" autocomplete="off" aria-controls="map-jump-suggestions" aria-expanded="false" />
             <div id="map-jump-suggestions" class="map-suggestions" role="listbox" hidden></div>
           </div>
         </div>
@@ -73,14 +73,14 @@
 
       <div id="map-status" class="status" role="status" aria-live="polite" hidden></div>
       <div class="map-wrap">
-        <div id="map" aria-label="Interaktive Weltkarte"></div>
+        <div id="map" aria-label="Interactive world map"></div>
         <aside id="country-sidebar" class="country-sidebar" aria-live="polite" hidden>
-          <button id="sidebar-close" class="sidebar-close" type="button" aria-label="Schließen">×</button>
+          <button id="sidebar-close" class="sidebar-close" type="button" aria-label="Close">×</button>
           <div id="sidebar-content"></div>
         </aside>
         <div id="map-legend" class="map-legend" aria-label="Legende"></div>
       </div>
-      <p class="map-hint">Klicke auf ein Land für Flagge und Infos. Mit Mausrad oder Pinch zoomen, mit gedrückter Maustaste verschieben.</p>
+      <p class="map-hint">Click a country to see its flag and information. Zoom with the wheel or pinch; drag to move.</p>
     </div>
   </main>
 
