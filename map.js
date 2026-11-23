@@ -247,8 +247,19 @@ function mapFeatureCollection() {
       .map((feature) => {
       const c = countryForFeature(feature);
       const id = c ? featureIdForCountry(c) : feature.id;
+      const geometry = c?.code === "kz" && feature.geometry
+        ? feature.geometry.type === "Polygon"
+          ? { ...feature.geometry, coordinates: feature.geometry.coordinates.slice(0, 1) }
+          : feature.geometry.type === "MultiPolygon"
+            ? {
+                ...feature.geometry,
+                coordinates: feature.geometry.coordinates.map((polygon) => polygon.slice(0, 1)),
+              }
+            : feature.geometry
+        : feature.geometry;
       return {
         ...feature,
+        ...(geometry ? { geometry } : {}),
         id,
         properties: {
           ...(feature.properties || {}),
