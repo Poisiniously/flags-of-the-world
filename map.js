@@ -136,6 +136,8 @@ const GEO_ALIASES = {
   PSX: "PSE", // Palästina
   GRL: "DNK", // Grönland gehört zu Dänemark
   SAH: "MAR", // Westsahara: völkerrechtlich umstritten, hier wie Marokko eingefärbt
+  PRI: "USA", // Puerto Rico
+  VIR: "USA", // Amerikanische Jungferninseln
 };
 
 function countryForFeature(feature) {
@@ -201,7 +203,11 @@ function mapFeatureCollection() {
         properties: {
           ...(feature.properties || {}),
           iso3: id,
-          fillColor: c ? colorFor(c) : NEUTRAL_FILL,
+          fillColor: c
+            ? (colorMode === "continent" && feature.properties?.continentOverride
+                ? CONTINENT_COLORS[feature.properties.continentOverride]
+                : colorFor(c))
+            : NEUTRAL_FILL,
           hasCountry: Boolean(c),
         },
       };
@@ -305,10 +311,12 @@ function showCountrySidebar(c) {
 function updateSelectedCountryOutline(country) {
   const source = map?.getSource("selected-country-outline");
   if (!source) return;
-  const feature = country && featureForCountry(country);
+  const features = country && geoData
+    ? geoData.features.filter((entry) => countryForFeature(entry)?.code === country.code)
+    : [];
   source.setData({
     type: "FeatureCollection",
-    features: feature ? [feature] : [],
+    features,
   });
 }
 
@@ -573,6 +581,53 @@ function jumpTo(name) {
   showCountrySidebar(country);
 }
 
+// In den Kartendaten gehören die Überseeteile Frankreichs zur selben Fläche wie
+// das Festland. Sie werden abgetrennt und in der Kontinent-Ansicht nach ihrer
+// geografischen Lage gefärbt (Französisch-Guayana liegt in Südamerika).
+// Daten, Popup und Auswahl bleiben die von Frankreich.
+const OVERSEAS_PARTS = {
+  FRA: [
+    { bbox: [-55, 2, -51, 6], continent: "Südamerika" },      // Französisch-Guayana
+    { bbox: [-64, 14, -60, 18.5], continent: "Nordamerika" }, // Guadeloupe, Martinique, St. Martin, St. Barthélemy
+    { bbox: [54, -22, 56, -20], continent: "Afrika" },        // Réunion
+    { bbox: [44, -14, 46, -12], continent: "Afrika" },        // Mayotte
+  ],
+};
+
+function splitOverseasParts(features) {
+  const main = [];
+  const extra = [];
+  for (const feature of features) {
+    const rules = OVERSEAS_PARTS[feature.id];
+    if (!rules || !feature.geometry || feature.geometry.type !== "MultiPolygon") {
+      main.push(feature);
+      continue;
+    }
+    const keep = [];
+    const groups = new Map();
+    for (const polygon of feature.geometry.coordinates) {
+      const ring = polygon[0] || [];
+      const xs = ring.map((pt) => pt[0]);
+      const ys = ring.map((pt) => pt[1]);
+      const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+      const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+      const rule = rules.find((r) => cx >= r.bbox[0] && cx <= r.bbox[2] && cy >= r.bbox[1] && cy <= r.bbox[3]);
+      if (!rule) keep.push(polygon);
+      else (groups.get(rule) || groups.set(rule, []).get(rule)).push(polygon);
+    }
+    if (keep.length) main.push({ ...feature, geometry: { type: "MultiPolygon", coordinates: keep } });
+    for (const [rule, polygons] of groups) {
+      extra.push({
+        ...feature,
+        geometry: { type: "MultiPolygon", coordinates: polygons },
+        properties: { ...feature.properties, continentOverride: rule.continent },
+      });
+    }
+  }
+  // Abgetrennte Teile stehen hinten, damit das Festland die Hauptfläche bleibt
+  return [...main, ...extra];
+}
+
 async function fetchGeo() {
   if (geoData) return geoData;
 
@@ -610,7 +665,7 @@ async function fetchGeo() {
     });
 
   if (features.length < 150) throw new Error("Zu wenige Ländergrenzen geladen");
-  geoData = { type: "FeatureCollection", features };
+  geoData = { type: "FeatureCollection", features: splitOverseasParts(features) };
   console.info(`Natural Earth: ${features.length} Ländergrenzen geladen`);
   return geoData;
 }
