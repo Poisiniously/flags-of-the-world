@@ -327,7 +327,20 @@ function updateSelectedCountryOutline(country) {
   const source = map?.getSource("selected-country-outline");
   if (!source) return;
   const features = country && geoData
-    ? geoData.features.filter((entry) => countryForFeature(entry)?.code === country.code)
+    ? geoData.features
+        .filter((entry) => countryForFeature(entry)?.code === country.code)
+        .map((entry) => {
+          // Innenringe (z. B. kleine Seen oder Datenartefakte) nicht als
+          // zusätzliche weiße Ländergrenzen hervorheben.
+          const geometry = entry.geometry;
+          if (geometry?.type === "Polygon") {
+            return { ...entry, geometry: { ...geometry, coordinates: geometry.coordinates.slice(0, 1) } };
+          }
+          if (geometry?.type === "MultiPolygon") {
+            return { ...entry, geometry: { ...geometry, coordinates: geometry.coordinates.map((polygon) => polygon.slice(0, 1)) } };
+          }
+          return entry;
+        })
     : [];
   source.setData({
     type: "FeatureCollection",
