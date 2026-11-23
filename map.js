@@ -231,7 +231,7 @@ function mapFeatureCollection() {
 }
 
 function renderLegend() {
-  mapLegendEl.innerHTML = "";
+  mapLegendEl.replaceChildren();
   let title;
   let entries;
   if (colorMode === "continent") {
@@ -285,7 +285,7 @@ function showCountrySidebar(c) {
 
   const sidebar = document.getElementById("country-sidebar");
   const content = document.getElementById("sidebar-content");
-  content.innerHTML = "";
+  content.replaceChildren();
   // Beim Länderwechsel den Inhalt kurz weich einblenden.
   content.classList.remove("country-switch");
   void content.offsetWidth;
