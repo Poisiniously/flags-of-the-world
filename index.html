@@ -80,7 +80,6 @@
         </aside>
         <div id="map-legend" class="map-legend" aria-label="Legende"></div>
       </div>
-      <p class="map-hint">Click a country to see its flag and information. Zoom with the wheel or pinch; drag to move.</p>
     </div>
   </main>
 
@@ -93,13 +92,26 @@
     </div>
   </div>
 
-  <footer>
-    <p>
-      Länderdaten von <a href="https://countries.dev" target="_blank" rel="noopener">countries.dev</a>,
-      Flaggen von <a href="https://flagcdn.com" target="_blank" rel="noopener">flagcdn.com</a>,
-      Karte mit <a href="https://maplibre.org/" target="_blank" rel="noopener">MapLibre GL JS</a> und
-      Ländergrenzen von <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">Natural Earth</a>.
-    </p>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-about">
+        <a class="footer-brand" href="#" aria-label="Flags of the World – back to top">🌍 Flags of the World</a>
+        <p id="footer-description">Die Flaggen, Länder und Hauptstädte der Welt – übersichtlich an einem Ort.</p>
+      </div>
+      <div class="footer-sources">
+        <h2 id="footer-sources-title">Daten & Quellen</h2>
+        <ul>
+          <li><a href="https://countries.dev" target="_blank" rel="noopener">countries.dev</a><span id="footer-country-data"> – Länderdaten</span></li>
+          <li><a href="https://flagcdn.com" target="_blank" rel="noopener">FlagCDN</a><span id="footer-flags"> – Flaggen</span></li>
+          <li><a href="https://maplibre.org/" target="_blank" rel="noopener">MapLibre GL JS</a><span id="footer-maps"> – Kartenbibliothek</span></li>
+          <li><a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">Natural Earth</a><span id="footer-boundaries"> – Ländergrenzen</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>Flags of the World</span>
+      <a href="https://github.com/Poisiniously/flags-of-the-world" target="_blank" rel="noopener">GitHub</a>
+    </div>
   </footer>
 
   <script src="data.js"></script>
