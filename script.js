@@ -25,6 +25,8 @@ function displayName(c) { return language === "en" ? (new Intl.DisplayNames(["en
 function continentLabel(value) { return language === "de" ? value : ({Europa:"Europe",Asien:"Asia",Afrika:"Africa",Nordamerika:"North America",Südamerika:"South America",Ozeanien:"Oceania"}[value] || value); }
 function applyPreferences() {
   document.documentElement.lang = language;
+  collator = new Intl.Collator(language, { sensitivity: "base" });
+  nf = new Intl.NumberFormat(language === "de" ? "de-DE" : "en-US");
   document.getElementById("search").placeholder = tr("search");
   document.getElementById("empty").textContent = tr("noResults");
   document.querySelector(".subtitle").textContent = language === "de" ? "Alle Flaggen der Welt mit Ländernamen und Hauptstädten" : "All flags of the world with country names and capitals";
@@ -80,8 +82,8 @@ const state = {
 
 let items = [];
 
-const collator = new Intl.Collator(language, { sensitivity: "base" });
-const nf = new Intl.NumberFormat(language === "de" ? "de-DE" : "en-US");
+let collator = new Intl.Collator(language, { sensitivity: "base" });
+let nf = new Intl.NumberFormat(language === "de" ? "de-DE" : "en-US");
 
 // Lokale Daten (Fallback + deutsche Hauptstädte), nach Ländercode
 const LOCAL = new Map(COUNTRIES.map((c) => [c.code, c]));
@@ -457,7 +459,7 @@ function updateSuggestions() {
     const b = document.createElement("button"); b.type = "button"; b.className = "suggestion"; b.setAttribute("role","option");
     const img = document.createElement("img"); img.src = flagUrl(c.code,80); img.alt = "";
     const name = document.createElement("span"); name.textContent = displayName(c);
-    const capital = document.createElement("small"); capital.textContent = c.capital;
+    const capital = document.createElement("small"); capital.textContent = language === "en" ? (c.capitalEn || c.capital) : c.capital;
     b.append(img,name,capital);
     b.addEventListener("click", () => { searchInput.value = displayName(c); state.query = normalize(c.name); state.continent = "Alle"; suggestionBox.hidden = true; renderFilters(); render(); });
     suggestionBox.appendChild(b);
