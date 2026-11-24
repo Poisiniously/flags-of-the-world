@@ -200,15 +200,36 @@ function countryForFeature(feature) {
   return null;
 }
 
+function featureIdsForCountry(country) {
+  if (!country) return [];
+  if (country.code === "ru") return ["RUS-EU", "RUS-AS"];
+  return [featureIdForCountry(country)];
+}
+
 function featureForCountry(country) {
   if (!country || !geoData) return null;
-  const matches = geoData.features.filter((f) => countryForFeature(f)?.code === country.code);
+  const matches = geoData.features.filter((feature) => countryForFeature(feature)?.code === country.code);
+  if (!matches.length) return null;
+  // Russia is intentionally split into European and Asian features for continent coloring.
+  // Merge both geometries for search zooming and the selected-country outline.
+  if (country.code === "ru") {
+    const coordinates = matches.flatMap((feature) => {
+      const geometry = feature.geometry;
+      if (geometry?.type === "Polygon") return [geometry.coordinates];
+      if (geometry?.type === "MultiPolygon") return geometry.coordinates;
+      return [];
+    });
+    return {
+      ...matches[0],
+      geometry: { type: "MultiPolygon", coordinates },
+    };
+  }
   const iso3 = String(country.iso3 || ISO3_BY_CODE[country.code] || "").toUpperCase();
-  const exact = matches.find((f) => {
-    const p = f.properties || {};
-    return [p.ADM0_A3, p.ISO_A3_EH, p.ISO_A3].some((v) => String(v || "").toUpperCase() === iso3);
-  });
-  return exact || matches[0] || null;
+  return matches.find((feature) => {
+    const properties = feature.properties || {};
+    return [properties.ADM0_A3, properties.ISO_A3_EH, properties.ISO_A3]
+      .some((value) => String(value || "").toUpperCase() === iso3);
+  }) || matches[0];
 }
 
 // Country colors and territory stripes
@@ -433,13 +454,17 @@ function territoryChips(list) {
 
 // Keep the selected country synchronized between the sidebar, map highlight, and search.
 function showCountrySidebar(c) {
-  if (selectedCountry) {
-    const oldId = featureIdForCountry(selectedCountry);
-    if (oldId && map?.getSource("countries")) map.setFeatureState({ source: "countries", id: oldId }, { selected: false });
+  if (selectedCountry && map?.getSource("countries")) {
+    for (const id of featureIdsForCountry(selectedCountry)) {
+      map.setFeatureState({ source: "countries", id }, { selected: false });
+    }
   }
   selectedCountry = c;
-  const id = featureIdForCountry(c);
-  if (id && map?.getSource("countries")) map.setFeatureState({ source: "countries", id }, { selected: true });
+  if (map?.getSource("countries")) {
+    for (const id of featureIdsForCountry(c)) {
+      map.setFeatureState({ source: "countries", id }, { selected: true });
+    }
+  }
   updateSelectedCountryOutline(c);
 
   const sidebar = document.getElementById("country-sidebar");
@@ -599,9 +624,10 @@ function hideCountrySidebar() {
   sidebar.style.display = "none";
   sidebar.setAttribute("aria-hidden", "true");
   document.querySelector(".map-wrap")?.classList.remove("has-sidebar");
-  if (selectedCountry) {
-    const id = featureIdForCountry(selectedCountry);
-    if (id && map?.getSource("countries")) map.setFeatureState({ source: "countries", id }, { selected: false });
+  if (selectedCountry && map?.getSource("countries")) {
+    for (const id of featureIdsForCountry(selectedCountry)) {
+      map.setFeatureState({ source: "countries", id }, { selected: false });
+    }
   }
   selectedCountry = null;
   updateSelectedCountryOutline(null);
@@ -696,8 +722,9 @@ function buildLayer() {
   }
 
   if (selectedCountry) {
-    const id = featureIdForCountry(selectedCountry);
-    if (id) map.setFeatureState({ source: "countries", id }, { selected: true });
+    for (const id of featureIdsForCountry(selectedCountry)) {
+      map.setFeatureState({ source: "countries", id }, { selected: true });
+    }
     updateSelectedCountryOutline(selectedCountry);
   }
 
@@ -741,7 +768,7 @@ function createMap() {
       version: 8,
       projection: { type: "globe" },
       sources: {},
-      layers: [{ id: "background", type: "background", paint: { "background-color": "#173b59" } }],
+      layers: [{ id: "background", type: "background", paint: { "background-color": "#2186c4" } }],
     },
     bounds: [[-180, -80], [180, 80]],
     fitBoundsOptions: { padding: 24, maxZoom: 1.4 },
