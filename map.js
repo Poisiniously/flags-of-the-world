@@ -320,7 +320,10 @@ function mapFeatureCollection() {
       return {
         ...feature,
         ...(geometry ? { geometry } : {}),
-        id,
+        // Give the two Russian continent sections distinct feature IDs so both remain independently clickable.
+        id: c?.code === "ru" && feature.properties?.continentOverride
+          ? `RUS-${feature.properties.continentOverride === "Europa" ? "EU" : "AS"}`
+          : id,
         properties: {
           ...(feature.properties || {}),
           iso3: id,
@@ -738,13 +741,15 @@ function createMap() {
       version: 8,
       projection: { type: "globe" },
       sources: {},
-      layers: [{ id: "background", type: "background", paint: { "background-color": "#0b1020" } }],
+      layers: [{ id: "background", type: "background", paint: { "background-color": "#173b59" } }],
     },
     bounds: [[-180, -80], [180, 80]],
     fitBoundsOptions: { padding: 24, maxZoom: 1.4 },
     minZoom: 0,
     maxZoom: 7,
     renderWorldCopies: true,
+    // Reduce the globe's post-drag momentum for slower, more controlled rotation.
+    dragPan: { inertia: 0.12 },
     bearing: 0,
     pitch: 0,
     maxPitch: 0,
