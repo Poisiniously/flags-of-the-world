@@ -37,6 +37,10 @@ const SCALES = {
   },
 };
 
+// Östlicher Kartenrand in Grad. Die Ostspitze Russlands reicht bis etwa 190,4°E
+// (= −169,6° in den Kartendaten).
+const MAP_EAST_EDGE = 191;
+
 let map = null;
 let geoData = null;
 let mapStarted = false;
@@ -782,12 +786,15 @@ function createMap() {
       layers: [{ id: "background", type: "background", paint: { "background-color": "#0b1020" } }],
     },
     // Weltansicht automatisch an den verfügbaren Kartenbereich anpassen.
-    bounds: [[-180, -80], [180, 80]],
+    bounds: [[-180, -80], [MAP_EAST_EDGE, 80]],
     fitBoundsOptions: { padding: 24, maxZoom: 1.4 },
     minZoom: 0,
     maxZoom: 7,
-    maxBounds: [[-180, -85], [180, 85]],
-    renderWorldCopies: false,
+    maxBounds: [[-180, -85], [MAP_EAST_EDGE, 85]],
+    // Die Karte läuft rechts ein Stück über 180° hinaus, damit die Ostspitze
+    // Russlands (Tschukotka, ab −180° in den Daten) dort zusammenhängend liegt
+    // statt als schmaler Streifen am linken Rand.
+    renderWorldCopies: true,
     // Eine flache, nordausgerichtete Karte: keine Rotation oder Neigung.
     bearing: 0,
     pitch: 0,
@@ -888,6 +895,14 @@ function splitCountryByLongitude(feature, longitude, westContinent, eastContinen
   const west = [];
   const east = [];
   for (const polygon of feature.geometry.coordinates) {
+    // Flächen, die komplett auf der Westhalbkugel liegen, sind die Fortsetzung
+    // hinter der Datumsgrenze (bei Russland die Ostspitze Tschukotkas bei
+    // −180° bis −169°). Sie gehören zum östlichen Teil und nicht zum westlichen.
+    const outerRing = polygon[0] || [];
+    if (outerRing.length && outerRing.every(([x]) => x < -90)) {
+      east.push(polygon);
+      continue;
+    }
     const westRings = polygon.map((ring) => clipRingAtLongitude(ring, longitude, true)).filter((ring) => ring.length);
     const eastRings = polygon.map((ring) => clipRingAtLongitude(ring, longitude, false)).filter((ring) => ring.length);
     if (westRings.length) west.push(westRings);
