@@ -743,8 +743,8 @@ function createMap() {
     fitBoundsOptions: { padding: 24, maxZoom: 1.4 },
     minZoom: 0,
     maxZoom: 7,
-    maxBounds: [[-180, -85], [180, 85]],
-    renderWorldCopies: false,
+    // Allow horizontal panning beyond the first world copy.
+    renderWorldCopies: true,
     bearing: 0,
     pitch: 0,
     maxPitch: 0,
