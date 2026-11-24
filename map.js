@@ -743,7 +743,8 @@ function createMap() {
     fitBoundsOptions: { padding: 24, maxZoom: 1.4 },
     minZoom: 0,
     maxZoom: 7,
-    // Allow horizontal panning beyond the first world copy.
+    // Use an interactive 3D globe projection.
+    projection: { type: "globe" },
     renderWorldCopies: true,
     bearing: 0,
     pitch: 0,
