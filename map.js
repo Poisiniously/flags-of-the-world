@@ -667,7 +667,7 @@ function buildLayer() {
           "case",
           ["boolean", ["feature-state", "selected"], false], 1,
           ["boolean", ["feature-state", "hover"], false], 1,
-          ["get", "hasCountry"], 1,
+          ["get", "hasCountry"], 0.85,
           0.5
         ],
       },
@@ -776,45 +776,9 @@ function createMap() {
     style: {
       version: 8,
       projection: { type: "globe" },
-      sources: {
-        "ocean-gradient": {
-          type: "image",
-          url: "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
-            <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="800" viewBox="0 0 1600 800">
-              <defs>
-                <linearGradient id="sea" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stop-color="#c8e2ef"/>
-                  <stop offset="0.48" stop-color="#a9d0e5"/>
-                  <stop offset="1" stop-color="#c2ddeb"/>
-                </linearGradient>
-                <radialGradient id="light">
-                  <stop offset="0" stop-color="#e5f2f7" stop-opacity=".72"/>
-                  <stop offset="1" stop-color="#e5f2f7" stop-opacity="0"/>
-                </radialGradient>
-                <radialGradient id="deep">
-                  <stop offset="0" stop-color="#6fa9ca" stop-opacity=".22"/>
-                  <stop offset="1" stop-color="#6fa9ca" stop-opacity="0"/>
-                </radialGradient>
-              </defs>
-              <rect width="1600" height="800" fill="url(#sea)"/>
-              <ellipse cx="270" cy="210" rx="430" ry="270" fill="url(#light)"/>
-              <ellipse cx="920" cy="620" rx="520" ry="310" fill="url(#light)"/>
-              <ellipse cx="1320" cy="170" rx="420" ry="300" fill="url(#deep)"/>
-              <ellipse cx="650" cy="330" rx="500" ry="340" fill="url(#deep)"/>
-              <ellipse cx="1510" cy="690" rx="360" ry="240" fill="url(#light)"/>
-            </svg>
-          `),
-          coordinates: [[-180, 85], [180, 85], [180, -85], [-180, -85]],
-        },
-      },
+      sources: {},
       layers: [
-        { id: "background", type: "background", paint: { "background-color": "#B9D9EB" } },
-        {
-          id: "ocean-gradient",
-          type: "raster",
-          source: "ocean-gradient",
-          paint: { "raster-opacity": 1, "raster-fade-duration": 0 },
-        },
+        { id: "background", type: "background", paint: { "background-color": "#A8C9DC" } },
       ],
     },
     bounds: [[-180, -80], [180, 80]],
