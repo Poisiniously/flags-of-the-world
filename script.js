@@ -1,8 +1,3 @@
-// =====================================================================
-// Flags of the World – Daten kommen live von der countries.dev API.
-// data.js dient nur noch als Offline-Fallback und liefert die deutschen
-// Hauptstadtnamen (die API kennt Hauptstädte nur auf Englisch).
-// =====================================================================
 
 const API_URL =
   "https://countries.dev/countries?fields=name,alpha2Code,alpha3Code,capital,region,subregion,area,population,topLevelDomain,independent";
@@ -20,9 +15,7 @@ function storageSet(key, value) {
   catch (_) { return false; }
 }
 
-// Reihenfolge der Kontinente (für Filter und Kontinent-Sortierung)
 const CONTINENTS = ["Europa", "Asien", "Afrika", "Nordamerika", "Südamerika", "Ozeanien"];
-
 
 let language = storageGet("fotw-language");
 if (language !== "de" && language !== "en") language = "de";
@@ -101,12 +94,8 @@ let items = [];
 let collator = new Intl.Collator(language, { sensitivity: "base" });
 let nf = new Intl.NumberFormat(language === "de" ? "de-DE" : "en-US");
 
-// Lokale Daten (Fallback + deutsche Hauptstädte), nach Ländercode
 const LOCAL = new Map(COUNTRIES.map((c) => [c.code, c]));
 
-// ---------- Hilfsfunktionen ----------
-
-// Suchtext normalisieren: Kleinbuchstaben, ohne Akzente, ß → ss
 function normalize(str) {
   return str
     .toLowerCase()
@@ -125,9 +114,6 @@ function withSearchText(c) {
   return { ...c, searchText: normalize(`${c.name} ${englishName} ${c.capital} ${c.capitalEn || ""} ${c.code} ${c.tld}`) };
 }
 
-// ---------- Daten laden ----------
-
-// Antwort der countries.dev API in unser Format übersetzen
 function mapApiCountry(c) {
   const code = String(c.alpha2Code || "").toLowerCase();
   if (!code) return null;
@@ -159,9 +145,6 @@ function mapApiCountry(c) {
   };
 }
 
-// Basis sind die mitgelieferten 197 Länder aus data.js. Die API liefert nur die
-// aktuellen Werte dazu. So fehlt kein Land (und keins bleibt auf der Karte
-// leer), auch wenn die API eins auslässt oder anders kennzeichnet.
 function parseApiResponse(data) {
   if (!Array.isArray(data)) throw new Error("Unerwartetes Antwortformat");
   const byCode = new Map();
@@ -208,23 +191,20 @@ function readCache() {
       );
 
     if (validTimestamp && validData) return raw;
-  } catch (_) { /* Cache nicht verfügbar oder ungültiges JSON */ }
+  } catch (_) {  }
   return null;
 }
 
 function writeCache(data) {
   try {
     storageSet(CACHE_KEY, JSON.stringify({ time: Date.now(), data }));
-  } catch (_) { /* z. B. privater Modus */ }
+  } catch (_) {  }
 }
 
 function offlineFallback() {
   return COUNTRIES.map((c) => ({ ...c, tld: fallbackTld(c.code) }));
 }
 
-// Reihenfolge: frischer Cache → Live-API → alter Cache → mitgelieferte Daten.
-// Bei einem erzwungenen Abruf wird der Cache übersprungen, aber nicht vorab gelöscht:
-// So bleibt er als Fallback erhalten, falls die API nicht erreichbar ist.
 async function loadData(forceReload = false) {
   const cached = readCache();
   if (!forceReload && cached && Date.now() - cached.time < CACHE_TTL_MS) {
@@ -240,8 +220,6 @@ async function loadData(forceReload = false) {
     return { list: offlineFallback(), source: "offline", time: null };
   }
 }
-
-// ---------- Sortierung & Filter ----------
 
 const SORTERS = {
   "name-asc": (a, b) => collator.compare(a.name, b.name),
@@ -272,7 +250,6 @@ function formatArea(km2) {
   return `${formatter.format(km2 < 1 ? km2 : Math.round(km2))} km²`;
 }
 
-// ---------- Rendering ----------
 const grid = document.getElementById("grid");
 const countEl = document.getElementById("count");
 const emptyEl = document.getElementById("empty");
@@ -328,7 +305,6 @@ function render() {
   grid.appendChild(frag);
 }
 
-// ---------- Kontinent-Filter ----------
 const filtersEl = document.getElementById("filters");
 
 function renderFilters() {
@@ -355,7 +331,6 @@ function renderFilters() {
   }
 }
 
-// ---------- Status / Datenquelle ----------
 function formatTime(ts) {
   return new Date(ts).toLocaleString(language === "de" ? "de-DE" : "en-US", { dateStyle: "short", timeStyle: "short" });
 }
@@ -423,7 +398,6 @@ statusEl.addEventListener("click", (e) => {
   if (e.target.closest(".retry")) init(true);
 });
 
-// ---------- Suche & Sortierung ----------
 let searchTimer;
 document.getElementById("search").addEventListener("input", (e) => {
   clearTimeout(searchTimer);
@@ -438,7 +412,6 @@ document.getElementById("sort").addEventListener("change", (e) => {
   render();
 });
 
-// ---------- Detail-Ansicht ----------
 const modal = document.getElementById("modal");
 const modalFlag = document.getElementById("modal-flag");
 const modalTitle = document.getElementById("modal-title");
@@ -520,8 +493,6 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-// ---------- Start ----------
-// dataReady: Promise, auf den die Karte warten kann, bis die Länderdaten da sind
 const dataReady = init();
 const suggestionBox = document.getElementById("search-suggestions");
 const searchInput = document.getElementById("search");
