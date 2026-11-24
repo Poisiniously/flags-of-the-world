@@ -37,10 +37,6 @@ const SCALES = {
   },
 };
 
-// Östlicher Kartenrand in Grad. Die Ostspitze Russlands reicht bis etwa 190,4°E
-// (= −169,6° in den Kartendaten).
-const MAP_EAST_EDGE = 191;
-
 let map = null;
 let geoData = null;
 let mapStarted = false;
@@ -786,15 +782,12 @@ function createMap() {
       layers: [{ id: "background", type: "background", paint: { "background-color": "#0b1020" } }],
     },
     // Weltansicht automatisch an den verfügbaren Kartenbereich anpassen.
-    bounds: [[-180, -80], [MAP_EAST_EDGE, 80]],
+    bounds: [[-180, -80], [180, 80]],
     fitBoundsOptions: { padding: 24, maxZoom: 1.4 },
     minZoom: 0,
     maxZoom: 7,
-    maxBounds: [[-180, -85], [MAP_EAST_EDGE, 85]],
-    // Die Karte läuft rechts ein Stück über 180° hinaus, damit die Ostspitze
-    // Russlands (Tschukotka, ab −180° in den Daten) dort zusammenhängend liegt
-    // statt als schmaler Streifen am linken Rand.
-    renderWorldCopies: true,
+    maxBounds: [[-180, -85], [180, 85]],
+    renderWorldCopies: false,
     // Eine flache, nordausgerichtete Karte: keine Rotation oder Neigung.
     bearing: 0,
     pitch: 0,
