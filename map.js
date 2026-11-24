@@ -1,13 +1,5 @@
 import * as maplibregl from "https://unpkg.com/maplibre-gl@6.19.0/dist/maplibre-gl.mjs";
 
-// =====================================================================
-// Reiter-Navigation + interaktive Weltkarte (MapLibre GL JS)
-//
-// Ländergrenzen aus einer einzelnen, vereinfachten Natural-Earth-Datei.
-// MapLibre GL JS rendert die GeoJSON-Polygone per WebGL.
-// =====================================================================
-
-// Eine einzige, stark vereinfachte GeoJSON-Datei statt ~180 Einzel-Requests.
 const GEOJSON_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_admin_0_countries.geojson";
 
 const CONTINENT_COLORS = {
@@ -44,8 +36,6 @@ let mapStartPromise = null;
 let colorMode = "continent";
 let selectedCountry = null;
 
-// ISO-3166-1-Zuordnung für die mitgelieferten Offline-Länderdaten.
-// Die GeoJSON-Kartendaten verwenden ISO-3-Codes, data.js dagegen ISO-2-Codes.
 const ISO3_BY_CODE = {
   "ad": "AND", "ae": "ARE", "af": "AFG", "ag": "ATG", "al": "ALB",
   "am": "ARM", "ao": "AGO", "ar": "ARG", "at": "AUT", "au": "AUS",
@@ -92,7 +82,6 @@ const ISO3_BY_CODE = {
 let countryByCode = new Map();
 let countryByIso3 = new Map();
 let countryByName = new Map();
-// Überseegebiete (territories.js): eigene Daten, gestreift dargestellt
 let territoryList = [];
 let territoryByIso3 = new Map();
 let territoryByCode = new Map();
@@ -109,7 +98,6 @@ const mapColorEl = document.getElementById("map-color");
 const mapJumpEl = document.getElementById("map-jump");
 const mapJumpSuggestions = document.getElementById("map-jump-suggestions");
 
-// ---------- Status ----------
 function setMapStatus(content, { warn = false, retry = false } = {}) {
   mapStatusEl.className = "status" + (warn ? " warn" : "");
   mapStatusEl.replaceChildren();
@@ -133,7 +121,6 @@ function hideMapStatus() {
   mapStatusEl.hidden = true;
 }
 
-// ---------- Zuordnung Karte ↔ Länderdaten ----------
 function rebuildLookup() {
   countryByCode = new Map();
   countryByIso3 = new Map();
@@ -167,13 +154,10 @@ function rebuildLookup() {
   }
 }
 
-// Länder und Überseegebiete zusammen (Suche, Autocomplete)
 function allMapEntries() {
   return [...items, ...territoryList];
 }
 
-// Natural Earth nutzt bei einigen Gebieten eigene Kürzel statt ISO-3166.
-// Das Gebiet wird dem Staat zugeordnet, zu dem es auf einer Länderkarte gehört.
 const GEO_ALIASES = {
   SDS: "SSD", // Südsudan
   SOL: "SOM", // Somaliland → Somalia
@@ -186,13 +170,9 @@ const GEO_ALIASES = {
 function countryForFeature(feature) {
   if (!feature) return null;
   const properties = feature.properties || {};
-  // Kosovo hat in den Kartendaten keinen ISO-Code.
   if (properties.name === "Kosovo" || properties.ADMIN === "Kosovo") {
     return countryByCode.get("xk") || null;
   }
-  // Mehrere Felder probieren, das erste mit Treffer gewinnt. In Natural Earth
-  // steht je nach Land in ADM0_A3, ISO_A3_EH oder ISO_A3 der brauchbare Code
-  // (bei Frankreich/Norwegen ist ISO_A3 z. B. "-99").
   const candidates = [
     feature.id, properties.iso3, properties.ADM0_A3, properties.ISO_A3_EH, properties.ISO_A3,
   ];
@@ -201,7 +181,6 @@ function countryForFeature(feature) {
     const c = countryByIso3.get(raw) || countryByIso3.get(GEO_ALIASES[raw] || "");
     if (c) return c;
   }
-  // Überseegebiete: über ISO-3, ISO-2 oder den englischen Namen der Fläche
   for (const value of candidates) {
     const t = territoryByIso3.get(String(value || "").toUpperCase());
     if (t) return t;
@@ -217,8 +196,6 @@ function countryForFeature(feature) {
   return null;
 }
 
-// Hauptfläche eines Landes. Gehören mehrere Flächen zu einem Land (z. B.
-// Somalia und Somaliland), gewinnt die mit dem passenden ISO-Code.
 function featureForCountry(country) {
   if (!country || !geoData) return null;
   const matches = geoData.features.filter((f) => countryForFeature(f)?.code === country.code);
@@ -230,7 +207,6 @@ function featureForCountry(country) {
   return exact || matches[0] || null;
 }
 
-// ---------- Färbung ----------
 function binIndex(value, bins) {
   let i = 0;
   while (i < bins.length && value >= bins[i]) i++;
@@ -243,10 +219,6 @@ function colorFor(c) {
   return SCALE_COLORS[binIndex(c[colorMode], scale.bins)];
 }
 
-// ---------- Streifen für Überseegebiete ----------
-// Streifen aus zwei Farben: die eigene Farbe des Gebiets und die Farbe des
-// Mutterlandes. So sieht man, wohin ein Gebiet gehört. Haben beide dieselbe
-// Farbe, wird der zweite Streifen abgedunkelt.
 function hexToRgb(hex) {
   const n = parseInt(hex.replace("#", ""), 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
@@ -299,8 +271,6 @@ function polygonOuterRingArea(polygon) {
 }
 
 function mapFeatureCollection() {
-  // Kleine, separat gezeichnete GeoJSON-Polygone innerhalb Kasachstans
-  // müssen aus der Kartenquelle entfernt werden, nicht nur aus der Auswahlkontur.
   const kazakhstanFeatures = geoData.features.filter(
     (feature) => countryForFeature(feature)?.code === "kz"
   );
@@ -374,7 +344,6 @@ function renderLegend() {
   }
   entries.push([NEUTRAL_FILL, tr("noData")]);
   if (territoryList.length) {
-    // Beispiel-Streifen: eigene Farbe + Farbe des Mutterlandes
     const [a, b] = colorMode === "continent"
       ? [CONTINENT_COLORS.Südamerika, CONTINENT_COLORS.Europa]
       : [SCALE_COLORS[1], SCALE_COLORS[4]];
@@ -398,7 +367,6 @@ function renderLegend() {
   }
 }
 
-// ---------- Tooltip & Popup ----------
 function tooltipContent(c) {
   const el = document.createElement("div");
   el.className = "tip";
@@ -411,7 +379,6 @@ function tooltipContent(c) {
   return el;
 }
 
-// Hinweis „Überseegebiet von …“ mit Link zum Mutterland
 function territoryBadge(sovereign) {
   const badge = document.createElement("div");
   badge.className = "territory-badge";
@@ -428,7 +395,6 @@ function territoryBadge(sovereign) {
   return badge;
 }
 
-// Liste der Überseegebiete eines Landes
 function territoryChips(list) {
   const box = document.createElement("div");
   box.className = "territory-list";
@@ -467,7 +433,6 @@ function showCountrySidebar(c) {
   const sidebar = document.getElementById("country-sidebar");
   const content = document.getElementById("sidebar-content");
   content.replaceChildren();
-  // Beim Länderwechsel den Inhalt kurz weich einblenden.
   content.classList.remove("country-switch");
   void content.offsetWidth;
   content.classList.add("country-switch");
@@ -516,15 +481,10 @@ function updateSelectedCountryOutline(country) {
   const source = map?.getSource("selected-country-outline");
   if (!source) return;
 
-  // Für die Auswahlkontur nur das eindeutig passende Länder-Feature verwenden.
-  // Das Verknüpfen sämtlicher Features mit demselben ISO-Code kann kleine,
-  // separat erfasste Gebiete oder Datenartefakte (wie den Kreis in Kasachstan)
-  // fälschlich als Teil der Landesgrenze hervorheben.
   const feature = country ? featureForCountry(country) : null;
   let features = feature ? [feature] : [];
 
   features = features.map((entry) => {
-    // Innenringe (z. B. Seen) nicht als zusätzliche Konturen zeichnen.
     const geometry = entry.geometry;
     if (geometry?.type === "Polygon") {
       return { ...entry, geometry: { ...geometry, coordinates: geometry.coordinates.slice(0, 1) } };
@@ -547,14 +507,11 @@ function updateSelectedCountryOutline(country) {
 function matchingMapCountries(query) {
   const q = normalize(query);
   if (!q) return [];
-  // Bindestriche zählen als Wortgrenze („Französisch-Guayana“ → „Guayana“)
   const terms = q.split(/[\s-]+/).filter(Boolean);
   return allMapEntries().filter((country) => {
     const haystack = country.searchText || normalize(
       `${country.name} ${displayName(country)} ${country.capital} ${country.capitalEn || ""} ${country.code} ${country.tld}`
     );
-    // Autocomplete should match the beginning of a word, not arbitrary
-    // substrings (e.g. "d" must not match Algeria only because of ".dz").
     const words = haystack.split(/[\s-]+/).filter(Boolean);
     return terms.every((term) => words.some((word) => word.startsWith(term)));
   });
@@ -587,7 +544,6 @@ function updateMapSuggestions() {
     return;
   }
 
-  // Outline every match, not just the suggestions visible in the dropdown.
   updateMapSearchOutlines(matches);
 
   for (const country of matches.slice(0, 8)) {
@@ -639,7 +595,6 @@ function hideCountrySidebar() {
   if (map) requestAnimationFrame(() => map.resize());
 }
 
-// ---------- MapLibre-Layer ----------
 function buildLayer() {
   rebuildLookup();
   featureIdByCode.clear();
@@ -667,7 +622,6 @@ function buildLayer() {
         ],
       },
     });
-    // Überseegebiete: gestreift (eigene Farbe + Farbe des Mutterlandes)
     map.addLayer({
       id: "territories-fill",
       type: "fill",
@@ -683,21 +637,17 @@ function buildLayer() {
         ],
       },
     });
-    // Grenzlinien aus eigener Quelle (ohne Nahtlinien an der alten Datumsgrenze)
     map.addSource("country-outlines", { type: "geojson", data: outlineData(data) });
     map.addLayer({
       id: "countries-outline",
       type: "line",
       source: "country-outlines",
       paint: {
-        // Ursprüngliche, dezente Ländergrenzen.
         "line-color": "#0f1220",
         "line-opacity": 1,
         "line-width": 0.7,
       },
     });
-    // Separate GeoJSON source: die weiße Auswahlkontur ist damit
-    // unabhängig von MapLibre Feature-State-IDs zuverlässig sichtbar.
     map.addSource("selected-country-outline", {
       type: "geojson",
       data: { type: "FeatureCollection", features: [] },
@@ -737,9 +687,6 @@ function buildLayer() {
   }
 
   if (!mapInteractionsReady) {
-    // Layer-spezifische Events sind zuverlässiger als eine manuelle
-    // queryRenderedFeatures-Abfrage bei jedem Klick. Länder und Überseegebiete
-    // liegen auf getrennten Ebenen und teilen sich dieselben Handler.
     for (const layerId of ["countries-fill", "territories-fill"]) {
       map.on("click", layerId, (event) => {
         const feature = event.features?.[0];
@@ -780,14 +727,12 @@ function createMap() {
       sources: {},
       layers: [{ id: "background", type: "background", paint: { "background-color": "#0b1020" } }],
     },
-    // Weltansicht automatisch an den verfügbaren Kartenbereich anpassen.
     bounds: [[-180, -80], [180, 80]],
     fitBoundsOptions: { padding: 24, maxZoom: 1.4 },
     minZoom: 0,
     maxZoom: 7,
     maxBounds: [[-180, -85], [180, 85]],
     renderWorldCopies: false,
-    // Eine flache, nordausgerichtete Karte: keine Rotation oder Neigung.
     bearing: 0,
     pitch: 0,
     maxPitch: 0,
@@ -798,7 +743,6 @@ function createMap() {
     attributionControl: true,
   });
   map = instance;
-  // Touch-Pinch darf zoomen, aber nicht die Karte drehen.
   instance.touchZoomRotate.disableRotation();
   instance.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
   return new Promise((resolve, reject) => {
@@ -839,9 +783,6 @@ function jumpTo(name) {
   showCountrySidebar(country);
 }
 
-// In den Kartendaten gehören die Überseeteile Frankreichs zur selben Fläche wie
-// das Festland. Sie werden abgetrennt und als eigene Gebiete geführt
-// (Daten aus territories.js), damit sie gestreift dargestellt werden können.
 const OVERSEAS_PARTS = {
   FRA: [
     { code: "gf", bbox: [-55, 2, -51, 6] },
@@ -854,8 +795,6 @@ const OVERSEAS_PARTS = {
   ],
 };
 
-// Russland wird für die Kontinent-Ansicht entlang des 60. östlichen
-// Längengrads geteilt. Das ist eine kartografische Näherung der Europa-Asien-Grenze.
 function clipRingAtLongitude(ring, longitude, keepWest) {
   if (!Array.isArray(ring) || ring.length < 4) return [];
   const inside = ([x]) => keepWest ? x <= longitude : x >= longitude;
@@ -887,9 +826,6 @@ function splitCountryByLongitude(feature, longitude, westContinent, eastContinen
   const west = [];
   const east = [];
   for (const polygon of feature.geometry.coordinates) {
-    // Flächen, die komplett auf der Westhalbkugel liegen, sind die Fortsetzung
-    // hinter der Datumsgrenze (bei Russland die Ostspitze Tschukotkas bei
-    // −180° bis −169°). Sie gehören zum östlichen Teil und nicht zum westlichen.
     const outerRing = polygon[0] || [];
     if (outerRing.length && outerRing.every(([x]) => x < -90)) {
       east.push(polygon);
@@ -915,7 +851,6 @@ function splitOverseasParts(features) {
       continue;
     }
     if (feature.id === "TUR" && feature.geometry?.type === "MultiPolygon") {
-      // Die 29°-Linie ist eine Näherung entlang der Meerengen von Istanbul.
       extra.push(...splitCountryByLongitude(feature, 29, "Europa", "Asien"));
       continue;
     }
@@ -957,19 +892,11 @@ function splitOverseasParts(features) {
     if (keep.length) main.push({ ...feature, geometry: { type: "MultiPolygon", coordinates: keep } });
     extra.push(...parts);
   }
-  // Abgetrennte Teile stehen hinten, damit das Festland die Hauptfläche bleibt
   return [...main, ...extra];
 }
 
-// ---------- Datumsgrenze der Karte ----------
-// Die Kartendaten schneiden die Welt bei ±180°. Dadurch liegt die Ostspitze
-// Russlands (Tschukotka) als schmaler Streifen am linken Kartenrand. Die Karte
-// legt ihre Datumsgrenze deshalb zwischen Big Diomede (Russland) und Little
-// Diomede (USA): Alle Koordinaten werden um 11° nach Westen gedreht, Flächen auf
-// der Linie werden dort geschnitten. So liegt Tschukotka rechts am Kartenrand.
 const DATE_LINE = -169;
 const DATE_LINE_SHIFT = DATE_LINE + 180; // 11°
-// Hier treffen sich die Flächen, die in den Daten an der alten Linie (±180°) endeten
 const SEAM_X = 180 - DATE_LINE_SHIFT;
 
 function shiftRingX(ring, dx) {
@@ -989,7 +916,6 @@ function rotatePolygon(polygon) {
   const westShift = 360 - DATE_LINE_SHIFT;
   if (min >= DATE_LINE) return [polygon.map((r) => shiftRingX(r, eastShift))];
   if (max <= DATE_LINE) return [polygon.map((r) => shiftRingX(r, westShift))];
-  // Die Fläche liegt auf der Linie: auf beiden Seiten abschneiden
   const parts = [];
   for (const [keepWest, shift] of [[false, eastShift], [true, westShift]]) {
     const outerClip = clipRingAtLongitude(outer, DATE_LINE, keepWest);
@@ -1018,8 +944,6 @@ function rotateWorld(features) {
   });
 }
 
-// Grenzlinien aus den Polygonen. Kanten genau auf der Nahtlinie (SEAM_X) werden
-// weggelassen, sonst zöge sich ein Strich durch Tschukotka, Fidschi usw.
 function outlineCollection(collection) {
   const isSeam = (a, b) => Math.abs(a[0] - SEAM_X) < 1e-6 && Math.abs(b[0] - SEAM_X) < 1e-6;
   const features = [];
@@ -1049,7 +973,6 @@ function outlineCollection(collection) {
   return { type: "FeatureCollection", features };
 }
 
-// Die Grenzlinien aller Länder ändern sich nicht beim Umfärben: einmal berechnen
 let outlineCache = null;
 function outlineData(collection) {
   if (!outlineCache) outlineCache = outlineCollection(collection);
@@ -1071,8 +994,6 @@ async function fetchGeo() {
     .filter((feature) => feature && feature.geometry)
     .map((feature) => {
       const properties = feature.properties || {};
-      // Einige Natural-Earth-Features führen in ADM0_A3 den Platzhalter
-      // "-99", obwohl ISO_A3_EH einen gültigen ISO-Code enthält.
       const iso3 = [
         properties.ADM0_A3,
         properties.ISO_A3_EH,
@@ -1108,7 +1029,6 @@ async function startMap() {
 
     try {
       if (typeof maplibregl === "undefined") throw new Error("maplibre");
-      // Die Karte sofort initialisieren; Länder- und Geodaten parallel laden.
       if (!map) await createMap();
       await Promise.all([dataReady, fetchGeo()]);
       if (!items.some((c) => c.iso3 || ISO3_BY_CODE[c.code])) throw new Error("no-country-codes");
@@ -1122,8 +1042,6 @@ async function startMap() {
       console.warn("Karte konnte nicht geladen werden:", err);
       mapStarted = false;
 
-      // Eine fehlgeschlagene MapLibre-Instanz kann nicht zuverlässig erneut
-      // geladen werden. Entfernen und beim nächsten Versuch frisch erzeugen.
       if (map) {
         try { map.remove(); } catch (removeError) {
           console.warn("Fehlerhafte Karteninstanz konnte nicht entfernt werden:", removeError);
@@ -1150,7 +1068,6 @@ async function startMap() {
   return mapStartPromise;
 }
 
-// ---------- Ereignisse ----------
 document.getElementById("sidebar-close")?.addEventListener("click", hideCountrySidebar);
 mapStatusEl.addEventListener("click", async (e) => {
   const retryButton = e.target.closest(".retry");
@@ -1192,7 +1109,6 @@ document.addEventListener("click", (event) => {
   if (!event.target.closest(".map-field-grow")) closeMapSuggestions();
 });
 
-// Länderdaten wurden (neu) geladen → Karte aktualisieren
 document.addEventListener("language-changed", () => {
   if (map && geoData && map.isStyleLoaded()) {
     buildLayer();
@@ -1210,7 +1126,6 @@ document.addEventListener("countries-updated", () => {
   }
 });
 
-// ---------- Reiter ----------
 const tabButtons = Array.from(document.querySelectorAll(".tab"));
 
 function showView(name, updateHash = true) {
@@ -1230,7 +1145,7 @@ function showView(name, updateHash = true) {
   if (updateHash) {
     try {
       history.replaceState(null, "", name === "map" ? "#karte" : location.pathname + location.search);
-    } catch (_) { /* z. B. bei file:// */ }
+    } catch (_) {  }
   }
 }
 
