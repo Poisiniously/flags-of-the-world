@@ -736,6 +736,7 @@ function createMap() {
     container: "map",
     style: {
       version: 8,
+      projection: { type: "globe" },
       sources: {},
       layers: [{ id: "background", type: "background", paint: { "background-color": "#0b1020" } }],
     },
@@ -743,20 +744,17 @@ function createMap() {
     fitBoundsOptions: { padding: 24, maxZoom: 1.4 },
     minZoom: 0,
     maxZoom: 7,
-    // Use an interactive 3D globe projection.
-    projection: { type: "globe" },
     renderWorldCopies: true,
     bearing: 0,
     pitch: 0,
     maxPitch: 0,
-    dragRotate: false,
+    dragRotate: true,
     pitchWithRotate: false,
     touchPitch: false,
     touchZoomRotate: true,
     attributionControl: true,
   });
   map = instance;
-  instance.touchZoomRotate.disableRotation();
   instance.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
   return new Promise((resolve, reject) => {
     instance.once("load", () => resolve(instance));
