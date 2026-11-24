@@ -3,12 +3,12 @@ import * as maplibregl from "https://unpkg.com/maplibre-gl@6.19.0/dist/maplibre-
 const GEOJSON_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_admin_0_countries.geojson";
 
 const CONTINENT_COLORS = {
-  Europa: "#173b8f",       // Dunkelblau
-  Asien: "#176b3a",        // Dunkelgrün
-  Nordamerika: "#f2cf32",  // Gelb
-  Südamerika: "#ed8428",   // Orange
-  Afrika: "#d93636",       // Rot
-  Ozeanien: "#8746b8",     // Lila
+  Europa: "#173b8f",
+  Asien: "#176b3a",
+  Nordamerika: "#f2cf32",
+  Südamerika: "#ed8428",
+  Afrika: "#d93636",
+  Ozeanien: "#8746b8",
 };
 const NEUTRAL_FILL = "#2b3263";
 const SCALE_COLORS = ["#2f3d8f", "#4358c9", "#6a73ee", "#9a6df2", "#c867ee", "#ff7ad2"];
@@ -150,7 +150,7 @@ function rebuildLookup() {
     territoryByCode.set(t.code, t);
     territoryByName.set(normalize(t.name), t);
     for (const n of t.names) territoryByName.set(normalize(n), t);
-    countryByName.set(normalize(t.name), t); // für „Zu Land springen“
+    countryByName.set(normalize(t.name), t);
   }
 }
 
@@ -159,12 +159,12 @@ function allMapEntries() {
 }
 
 const GEO_ALIASES = {
-  SDS: "SSD", // Südsudan
-  SOL: "SOM", // Somaliland → Somalia
-  CYN: "CYP", // Nordzypern → Zypern
-  KOS: "XKX", // Kosovo
-  PSX: "PSE", // Palästina
-  SAH: "MAR", // Westsahara: völkerrechtlich umstritten, hier wie Marokko eingefärbt
+  SDS: "SSD",
+  SOL: "SOM",
+  CYN: "CYP",
+  KOS: "XKX",
+  PSX: "PSE",
+  SAH: "MAR",
 };
 
 function countryForFeature(feature) {
@@ -238,7 +238,7 @@ function stripeColors(territory) {
   return [own, other];
 }
 
-const STRIPE_TILE = 12; // Pixel; ergibt diagonale Streifen von 6 px Breite
+const STRIPE_TILE = 12;
 
 function ensureStripeImage(colorA, colorB) {
   const name = `stripe-${colorA.slice(1)}-${colorB.slice(1)}`;
@@ -875,7 +875,7 @@ function splitOverseasParts(features) {
     for (const [rule, polygons] of groups) {
       const t = TERRITORIES.find((x) => x.code === rule.code);
       if (!t) {
-        keep.push(...polygons); // unbekanntes Gebiet: bleibt beim Mutterland
+        keep.push(...polygons);
         continue;
       }
       parts.push({
@@ -896,7 +896,7 @@ function splitOverseasParts(features) {
 }
 
 const DATE_LINE = -169;
-const DATE_LINE_SHIFT = DATE_LINE + 180; // 11°
+const DATE_LINE_SHIFT = DATE_LINE + 180;
 const SEAM_X = 180 - DATE_LINE_SHIFT;
 
 function shiftRingX(ring, dx) {
