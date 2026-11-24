@@ -124,6 +124,7 @@ function hideMapStatus() {
   mapStatusEl.hidden = true;
 }
 
+// Build indexes for ISO codes, names, and territories to match map features quickly.
 function rebuildLookup() {
   countryByCode = new Map();
   countryByIso3 = new Map();
@@ -244,6 +245,7 @@ function stripeColors(territory) {
 
 const STRIPE_TILE = 12;
 
+// Create a reusable image tile for the striped fill used by overseas territories.
 function ensureStripeImage(colorA, colorB) {
   const name = `stripe-${colorA.slice(1)}-${colorB.slice(1)}`;
   if (!map || map.hasImage(name)) return name;
@@ -274,6 +276,7 @@ function polygonOuterRingArea(polygon) {
   return Math.abs(sum / 2);
 }
 
+// Join Natural Earth geometry with country data and calculate each feature's fill style.
 function mapFeatureCollection() {
   const kazakhstanFeatures = geoData.features.filter(
     (feature) => countryForFeature(feature)?.code === "kz"
@@ -425,6 +428,7 @@ function territoryChips(list) {
   return box;
 }
 
+// Keep the selected country synchronized between the sidebar, map highlight, and search.
 function showCountrySidebar(c) {
   if (selectedCountry) {
     const oldId = featureIdForCountry(selectedCountry);
@@ -602,6 +606,7 @@ function hideCountrySidebar() {
 }
 
 // MapLibre layers and initialization
+// Rebuild map sources and layers when country data or display settings change.
 function buildLayer() {
   rebuildLookup();
   featureIdByCode.clear();
@@ -762,6 +767,7 @@ function createMap() {
   });
 }
 
+// Fit the map to a country's geometry and open its information panel.
 function jumpTo(name) {
   const country = countryByName.get(normalize(name));
   if (!country || !map || !geoData) return;
@@ -803,6 +809,7 @@ const OVERSEAS_PARTS = {
   ],
 };
 
+// Clip a polygon ring at a meridian; this prevents geometry crossing map boundaries.
 function clipRingAtLongitude(ring, longitude, keepWest) {
   if (!Array.isArray(ring) || ring.length < 4) return [];
   const inside = ([x]) => keepWest ? x <= longitude : x >= longitude;
@@ -850,6 +857,7 @@ function splitCountryByLongitude(feature, longitude, westContinent, eastContinen
   ];
 }
 
+// Separate selected overseas regions and split Russia/Türkiye at their Europe–Asia boundary.
 function splitOverseasParts(features) {
   const main = [];
   const extra = [];
@@ -935,6 +943,7 @@ function rotatePolygon(polygon) {
   return parts;
 }
 
+// Shift polygon coordinates so the map's date line does not cut through the chosen center.
 function rotateWorld(features) {
   return features.map((feature) => {
     const g = feature.geometry;
@@ -953,6 +962,7 @@ function rotateWorld(features) {
   });
 }
 
+// Build boundary lines while omitting the artificial seam created by the date-line shift.
 function outlineCollection(collection) {
   const isSeam = (a, b) => Math.abs(a[0] - SEAM_X) < 1e-6 && Math.abs(b[0] - SEAM_X) < 1e-6;
   const features = [];
@@ -989,6 +999,7 @@ function outlineData(collection) {
 }
 
 // Load map data
+// Download and normalize Natural Earth GeoJSON, then apply the map-specific geometry fixes.
 async function fetchGeo() {
   if (geoData) return geoData;
 
@@ -1030,6 +1041,7 @@ async function fetchGeo() {
   return geoData;
 }
 
+// Initialize the map only when needed and reuse any initialization already in progress.
 async function startMap() {
   if (mapStarted) return;
   if (mapStartPromise) return mapStartPromise;
