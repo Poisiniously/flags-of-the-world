@@ -92,6 +92,11 @@ const ISO3_BY_CODE = {
 let countryByCode = new Map();
 let countryByIso3 = new Map();
 let countryByName = new Map();
+// Überseegebiete (territories.js): eigene Daten, gestreift dargestellt
+let territoryList = [];
+let territoryByIso3 = new Map();
+let territoryByCode = new Map();
+let territoryByName = new Map();
 const featureIdByCode = new Map();
 let hoveredFeatureId = null;
 let mapInteractionsReady = false;
@@ -139,6 +144,32 @@ function rebuildLookup() {
     if (iso3) countryByIso3.set(iso3.toUpperCase(), c);
     countryByName.set(normalize(c.name), c);
   }
+
+  territoryByIso3 = new Map();
+  territoryByCode = new Map();
+  territoryByName = new Map();
+  territoryList = (typeof TERRITORIES === "undefined" ? [] : TERRITORIES).map((t) => {
+    const sovereign = countryByCode.get(t.sovereign);
+    return {
+      ...t,
+      searchText: normalize(
+        `${t.name} ${t.names.join(" ")} ${t.capital} ${t.code} ${t.tld} ` +
+        `${sovereign ? sovereign.name + " " + displayName(sovereign) : ""}`
+      ),
+    };
+  });
+  for (const t of territoryList) {
+    territoryByIso3.set(t.iso3, t);
+    territoryByCode.set(t.code, t);
+    territoryByName.set(normalize(t.name), t);
+    for (const n of t.names) territoryByName.set(normalize(n), t);
+    countryByName.set(normalize(t.name), t); // für „Zu Land springen“
+  }
+}
+
+// Länder und Überseegebiete zusammen (Suche, Autocomplete)
+function allMapEntries() {
+  return [...items, ...territoryList];
 }
 
 // Natural Earth nutzt bei einigen Gebieten eigene Kürzel statt ISO-3166.
@@ -149,10 +180,7 @@ const GEO_ALIASES = {
   CYN: "CYP", // Nordzypern → Zypern
   KOS: "XKX", // Kosovo
   PSX: "PSE", // Palästina
-  GRL: "DNK", // Grönland gehört zu Dänemark
   SAH: "MAR", // Westsahara: völkerrechtlich umstritten, hier wie Marokko eingefärbt
-  PRI: "USA", // Puerto Rico
-  VIR: "USA", // Amerikanische Jungferninseln
 };
 
 function countryForFeature(feature) {
@@ -172,6 +200,19 @@ function countryForFeature(feature) {
     const raw = String(value || "").toUpperCase();
     const c = countryByIso3.get(raw) || countryByIso3.get(GEO_ALIASES[raw] || "");
     if (c) return c;
+  }
+  // Überseegebiete: über ISO-3, ISO-2 oder den englischen Namen der Fläche
+  for (const value of candidates) {
+    const t = territoryByIso3.get(String(value || "").toUpperCase());
+    if (t) return t;
+  }
+  for (const value of [properties.ISO_A2, properties.ISO_A2_EH]) {
+    const t = territoryByCode.get(String(value || "").toLowerCase());
+    if (t) return t;
+  }
+  for (const value of [properties.ADMIN, properties.NAME, properties.NAME_EN, properties.name]) {
+    const t = value ? territoryByName.get(normalize(String(value))) : null;
+    if (t) return t;
   }
   return null;
 }
@@ -200,6 +241,48 @@ function colorFor(c) {
   if (colorMode === "continent") return CONTINENT_COLORS[c.continent] || NEUTRAL_FILL;
   const scale = SCALES[colorMode];
   return SCALE_COLORS[binIndex(c[colorMode], scale.bins)];
+}
+
+// ---------- Streifen für Überseegebiete ----------
+// Streifen aus zwei Farben: die eigene Farbe des Gebiets und die Farbe des
+// Mutterlandes. So sieht man, wohin ein Gebiet gehört. Haben beide dieselbe
+// Farbe, wird der zweite Streifen abgedunkelt.
+function hexToRgb(hex) {
+  const n = parseInt(hex.replace("#", ""), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function darken(hex, amount = 0.45) {
+  const [r, g, b] = hexToRgb(hex);
+  const mix = (v, target) => Math.round(v * (1 - amount) + target * amount);
+  return "#" + [mix(r, 11), mix(g, 16), mix(b, 32)].map((v) => v.toString(16).padStart(2, "0")).join("");
+}
+
+function stripeColors(territory) {
+  const own = colorFor(territory);
+  const sovereign = countryByCode.get(territory.sovereign);
+  let other = sovereign ? colorFor(sovereign) : NEUTRAL_FILL;
+  if (other.toLowerCase() === own.toLowerCase()) other = darken(own);
+  return [own, other];
+}
+
+const STRIPE_TILE = 12; // Pixel; ergibt diagonale Streifen von 6 px Breite
+
+function ensureStripeImage(colorA, colorB) {
+  const name = `stripe-${colorA.slice(1)}-${colorB.slice(1)}`;
+  if (!map || map.hasImage(name)) return name;
+  const a = hexToRgb(colorA);
+  const b = hexToRgb(colorB);
+  const data = new Uint8Array(STRIPE_TILE * STRIPE_TILE * 4);
+  for (let y = 0; y < STRIPE_TILE; y++) {
+    for (let x = 0; x < STRIPE_TILE; x++) {
+      const color = (x + y) % STRIPE_TILE < STRIPE_TILE / 2 ? a : b;
+      const i = (y * STRIPE_TILE + x) * 4;
+      data[i] = color[0]; data[i + 1] = color[1]; data[i + 2] = color[2]; data[i + 3] = 255;
+    }
+  }
+  map.addImage(name, { width: STRIPE_TILE, height: STRIPE_TILE, data });
+  return name;
 }
 
 function featureIdForCountry(c) {
@@ -270,6 +353,8 @@ function mapFeatureCollection() {
                 : colorFor(c))
             : NEUTRAL_FILL,
           hasCountry: Boolean(c),
+          isTerritory: Boolean(c?.isTerritory),
+          stripeImage: c?.isTerritory ? ensureStripeImage(...stripeColors(c)) : "",
         },
       };
     }),
@@ -288,6 +373,13 @@ function renderLegend() {
     entries = SCALES[colorMode].labels[language].map((l, i) => [SCALE_COLORS[i], l]);
   }
   entries.push([NEUTRAL_FILL, tr("noData")]);
+  if (territoryList.length) {
+    // Beispiel-Streifen: eigene Farbe + Farbe des Mutterlandes
+    const [a, b] = colorMode === "continent"
+      ? [CONTINENT_COLORS.Südamerika, CONTINENT_COLORS.Europa]
+      : [SCALE_COLORS[1], SCALE_COLORS[4]];
+    entries.push([`repeating-linear-gradient(45deg, ${a} 0 3px, ${b} 3px 6px)`, tr("territoryLegend")]);
+  }
 
   const h = document.createElement("strong");
   h.textContent = title;
@@ -317,6 +409,49 @@ function tooltipContent(c) {
   name.textContent = displayName(c);
   el.append(img, name);
   return el;
+}
+
+// Hinweis „Überseegebiet von …“ mit Link zum Mutterland
+function territoryBadge(sovereign) {
+  const badge = document.createElement("div");
+  badge.className = "territory-badge";
+  const dot = document.createElement("span");
+  dot.className = "territory-dot";
+  const text = document.createElement("span");
+  text.textContent = tr("territoryOf") + " ";
+  const link = document.createElement("button");
+  link.type = "button";
+  link.className = "territory-link";
+  link.textContent = displayName(sovereign);
+  link.addEventListener("click", () => jumpTo(sovereign.name));
+  badge.append(dot, text, link);
+  return badge;
+}
+
+// Liste der Überseegebiete eines Landes
+function territoryChips(list) {
+  const box = document.createElement("div");
+  box.className = "territory-list";
+  const heading = document.createElement("h3");
+  heading.textContent = `${tr("territories")} (${list.length})`;
+  const chips = document.createElement("div");
+  chips.className = "territory-chips";
+  for (const t of [...list].sort((a, b) => collator.compare(displayName(a), displayName(b)))) {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "territory-chip";
+    const flag = document.createElement("img");
+    flag.src = flagUrl(t.code, 40);
+    flag.alt = "";
+    flag.addEventListener("error", () => { flag.style.display = "none"; });
+    const label = document.createElement("span");
+    label.textContent = displayName(t);
+    chip.append(flag, label);
+    chip.addEventListener("click", () => jumpTo(t.name));
+    chips.appendChild(chip);
+  }
+  box.append(heading, chips);
+  return box;
 }
 
 function showCountrySidebar(c) {
@@ -361,7 +496,15 @@ function showCountrySidebar(c) {
     dd.textContent = value;
     info.append(dt, dd);
   }
-  content.append(img, title, info);
+  img.addEventListener("error", () => { img.style.display = "none"; });
+  content.append(img, title);
+  if (c.isTerritory) {
+    const sovereign = countryByCode.get(c.sovereign);
+    if (sovereign) content.append(territoryBadge(sovereign));
+  }
+  content.append(info);
+  const ownTerritories = territoryList.filter((t) => t.sovereign === c.code);
+  if (ownTerritories.length) content.append(territoryChips(ownTerritories));
   sidebar.hidden = false;
   sidebar.style.display = "block";
   sidebar.setAttribute("aria-hidden", "false");
@@ -407,14 +550,15 @@ function updateSelectedCountryOutline(country) {
 function matchingMapCountries(query) {
   const q = normalize(query);
   if (!q) return [];
-  const terms = q.split(/\s+/).filter(Boolean);
-  return items.filter((country) => {
+  // Bindestriche zählen als Wortgrenze („Französisch-Guayana“ → „Guayana“)
+  const terms = q.split(/[\s-]+/).filter(Boolean);
+  return allMapEntries().filter((country) => {
     const haystack = country.searchText || normalize(
       `${country.name} ${displayName(country)} ${country.capital} ${country.capitalEn || ""} ${country.code} ${country.tld}`
     );
     // Autocomplete should match the beginning of a word, not arbitrary
     // substrings (e.g. "d" must not match Algeria only because of ".dz").
-    const words = haystack.split(/\s+/).filter(Boolean);
+    const words = haystack.split(/[\s-]+/).filter(Boolean);
     return terms.every((term) => words.some((word) => word.startsWith(term)));
   });
 }
@@ -461,6 +605,11 @@ function updateMapSuggestions() {
     name.textContent = displayName(country);
     const capital = document.createElement("small");
     capital.textContent = language === "en" ? (country.capitalEn || country.capital) : country.capital;
+    if (country.isTerritory) {
+      const sovereign = countryByCode.get(country.sovereign);
+      if (sovereign) capital.textContent += ` · ${displayName(sovereign)}`;
+      flag.addEventListener("error", () => { flag.style.display = "none"; });
+    }
     option.append(flag, name, capital);
     option.addEventListener("click", () => {
       mapJumpEl.value = displayName(country);
@@ -509,6 +658,7 @@ function buildLayer() {
       id: "countries-fill",
       type: "fill",
       source: "countries",
+      filter: ["!=", ["get", "isTerritory"], true],
       paint: {
         "fill-color": ["get", "fillColor"],
         "fill-opacity": [
@@ -517,6 +667,22 @@ function buildLayer() {
           ["boolean", ["feature-state", "hover"], false], 1,
           ["get", "hasCountry"], 0.85,
           0.5
+        ],
+      },
+    });
+    // Überseegebiete: gestreift (eigene Farbe + Farbe des Mutterlandes)
+    map.addLayer({
+      id: "territories-fill",
+      type: "fill",
+      source: "countries",
+      filter: ["==", ["get", "isTerritory"], true],
+      paint: {
+        "fill-pattern": ["get", "stripeImage"],
+        "fill-opacity": [
+          "case",
+          ["boolean", ["feature-state", "selected"], false], 1,
+          ["boolean", ["feature-state", "hover"], false], 1,
+          0.9
         ],
       },
     });
@@ -573,33 +739,36 @@ function buildLayer() {
 
   if (!mapInteractionsReady) {
     // Layer-spezifische Events sind zuverlässiger als eine manuelle
-    // queryRenderedFeatures-Abfrage bei jedem Klick.
-    map.on("click", "countries-fill", (event) => {
-      const feature = event.features?.[0];
-      const country = countryForFeature(feature);
-      if (country) showCountrySidebar(country);
-    });
-    map.on("mouseenter", "countries-fill", () => {
-      map.getCanvas().style.cursor = "pointer";
-    });
-    map.on("mouseleave", "countries-fill", () => {
-      map.getCanvas().style.cursor = "";
-      if (hoveredFeatureId) {
-        map.setFeatureState({ source: "countries", id: hoveredFeatureId }, { hover: false });
-        hoveredFeatureId = null;
-      }
-    });
-    map.on("mousemove", "countries-fill", (event) => {
-      const feature = event.features?.[0];
-      const id = feature?.id != null ? String(feature.id) : null;
-      if (hoveredFeatureId && hoveredFeatureId !== id) {
-        map.setFeatureState({ source: "countries", id: hoveredFeatureId }, { hover: false });
-      }
-      hoveredFeatureId = id;
-      if (hoveredFeatureId) {
-        map.setFeatureState({ source: "countries", id: hoveredFeatureId }, { hover: true });
-      }
-    });
+    // queryRenderedFeatures-Abfrage bei jedem Klick. Länder und Überseegebiete
+    // liegen auf getrennten Ebenen und teilen sich dieselben Handler.
+    for (const layerId of ["countries-fill", "territories-fill"]) {
+      map.on("click", layerId, (event) => {
+        const feature = event.features?.[0];
+        const country = countryForFeature(feature);
+        if (country) showCountrySidebar(country);
+      });
+      map.on("mouseenter", layerId, () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", layerId, () => {
+        map.getCanvas().style.cursor = "";
+        if (hoveredFeatureId) {
+          map.setFeatureState({ source: "countries", id: hoveredFeatureId }, { hover: false });
+          hoveredFeatureId = null;
+        }
+      });
+      map.on("mousemove", layerId, (event) => {
+        const feature = event.features?.[0];
+        const id = feature?.id != null ? String(feature.id) : null;
+        if (hoveredFeatureId && hoveredFeatureId !== id) {
+          map.setFeatureState({ source: "countries", id: hoveredFeatureId }, { hover: false });
+        }
+        hoveredFeatureId = id;
+        if (hoveredFeatureId) {
+          map.setFeatureState({ source: "countries", id: hoveredFeatureId }, { hover: true });
+        }
+      });
+    }
     mapInteractionsReady = true;
   }
 }
@@ -667,20 +836,22 @@ function jumpTo(name) {
   extend(feature.geometry.coordinates);
   if (bounds.isEmpty()) return;
   hideMapStatus();
-  map.fitBounds(bounds, { maxZoom: 5, padding: 40, duration: 900 });
+  map.fitBounds(bounds, { maxZoom: country.isTerritory ? 7 : 5, padding: 40, duration: 900 });
   showCountrySidebar(country);
 }
 
 // In den Kartendaten gehören die Überseeteile Frankreichs zur selben Fläche wie
-// das Festland. Sie werden abgetrennt und in der Kontinent-Ansicht nach ihrer
-// geografischen Lage gefärbt (Französisch-Guayana liegt in Südamerika).
-// Daten, Popup und Auswahl bleiben die von Frankreich.
+// das Festland. Sie werden abgetrennt und als eigene Gebiete geführt
+// (Daten aus territories.js), damit sie gestreift dargestellt werden können.
 const OVERSEAS_PARTS = {
   FRA: [
-    { bbox: [-55, 2, -51, 6], continent: "Südamerika" },      // Französisch-Guayana
-    { bbox: [-64, 14, -60, 18.5], continent: "Nordamerika" }, // Guadeloupe, Martinique, St. Martin, St. Barthélemy
-    { bbox: [54, -22, 56, -20], continent: "Afrika" },        // Réunion
-    { bbox: [44, -14, 46, -12], continent: "Afrika" },        // Mayotte
+    { code: "gf", bbox: [-55, 2, -51, 6] },
+    { code: "gp", bbox: [-62, 15.8, -61, 16.6] },
+    { code: "mq", bbox: [-61.3, 14.3, -60.7, 15] },
+    { code: "mf", bbox: [-63.2, 18, -62.9, 18.2] },
+    { code: "bl", bbox: [-63, 17.8, -62.7, 17.99] },
+    { code: "re", bbox: [54, -22, 56, -20] },
+    { code: "yt", bbox: [44, -14, 46, -12] },
   ],
 };
 
@@ -741,7 +912,7 @@ function splitOverseasParts(features) {
       extra.push(...splitCountryByLongitude(feature, 29, "Europa", "Asien"));
       continue;
     }
-    const rules = OVERSEAS_PARTS[feature.id];
+    const rules = typeof TERRITORIES === "undefined" ? null : OVERSEAS_PARTS[feature.id];
     if (!rules || !feature.geometry || feature.geometry.type !== "MultiPolygon") {
       main.push(feature);
       continue;
@@ -758,14 +929,26 @@ function splitOverseasParts(features) {
       if (!rule) keep.push(polygon);
       else (groups.get(rule) || groups.set(rule, []).get(rule)).push(polygon);
     }
-    if (keep.length) main.push({ ...feature, geometry: { type: "MultiPolygon", coordinates: keep } });
+    const parts = [];
     for (const [rule, polygons] of groups) {
-      extra.push({
+      const t = TERRITORIES.find((x) => x.code === rule.code);
+      if (!t) {
+        keep.push(...polygons); // unbekanntes Gebiet: bleibt beim Mutterland
+        continue;
+      }
+      parts.push({
         ...feature,
+        id: t.iso3,
         geometry: { type: "MultiPolygon", coordinates: polygons },
-        properties: { ...feature.properties, continentOverride: rule.continent },
+        properties: {
+          ...feature.properties,
+          ADMIN: t.name, name: t.name,
+          ADM0_A3: t.iso3, ISO_A3: t.iso3, ISO_A3_EH: t.iso3, ISO_A2: t.code.toUpperCase(),
+        },
       });
     }
+    if (keep.length) main.push({ ...feature, geometry: { type: "MultiPolygon", coordinates: keep } });
+    extra.push(...parts);
   }
   // Abgetrennte Teile stehen hinten, damit das Festland die Hauptfläche bleibt
   return [...main, ...extra];
@@ -885,7 +1068,7 @@ mapJumpEl.addEventListener("input", updateMapSuggestions);
 mapJumpEl.addEventListener("focus", updateMapSuggestions);
 mapJumpEl.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
-    const exact = items.find((country) =>
+    const exact = allMapEntries().find((country) =>
       normalize(displayName(country)) === normalize(mapJumpEl.value) ||
       normalize(country.name) === normalize(mapJumpEl.value)
     );

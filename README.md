@@ -18,7 +18,8 @@ An interactive, bilingual directory of **197 countries**. Browse national flags,
 - Color countries by continent, population, or area.
 - View a legend for the active color scale.
 - Hover over countries to identify them and select them to open a details sidebar.
-- Search for a country and jump to its location.
+- Search for a country or overseas territory and jump to its location.
+- **Overseas territories** (44, for example French Guiana, Greenland, Puerto Rico, Hong Kong, the Falkland Islands) are drawn with diagonal stripes: one stripe in the territory's own color and one in the color of the state it belongs to. They have their own data (capital, area, population, domain), and the sidebar links to the sovereign state, which in turn lists its territories. The territory data lives in `territories.js`; they are not part of the 197 countries in the directory.
 - Supports mouse, touch, and pinch-to-zoom interactions.
 - Uses Natural Earth country-boundary data, with additional handling for selected territories and overseas regions.
 

@@ -277,6 +277,56 @@ body.modal-open { overflow: hidden; }
 .map-legend strong { display: block; margin-bottom: .2rem; }
 .legend-row { display: flex; align-items: center; gap: .5rem; }
 .legend-swatch { width: 14px; height: 14px; border-radius: 3px; flex: none; }
+
+/* Überseegebiete: Hinweis auf das Mutterland und Liste im Seitenfenster */
+.territory-badge {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .35rem;
+  margin: -.4rem 0 1rem;
+  padding: .5rem .7rem;
+  border-radius: 10px;
+  background: rgba(165, 108, 255, .12);
+  color: var(--muted);
+  font-size: .9rem;
+}
+.territory-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex: none;
+  background: repeating-linear-gradient(45deg, var(--accent) 0 3px, var(--accent-2) 3px 6px);
+}
+.territory-link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.territory-list { margin-top: 1.25rem; }
+.territory-list h3 { margin: 0 0 .6rem; font-size: .95rem; color: var(--muted); font-weight: 600; }
+.territory-chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+.territory-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .3rem .65rem;
+  border: 1px solid var(--surface-2);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: .82rem;
+  cursor: pointer;
+}
+.territory-chip:hover { background: var(--surface-2); }
+.territory-chip img { width: 18px; height: auto; border-radius: 2px; }
 .map-hint { color: var(--muted); font-size: .85rem; margin: .75rem 0 0; }
 
 footer { text-align: center; color: var(--muted); font-size: .85rem; padding: 2rem 1rem; }
