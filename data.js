@@ -1,7 +1,4 @@
-// Länderdaten: [ISO-Code, Name, Hauptstadt, Kontinent, Fläche in km², Einwohner (gerundet)]
-// Flaggen werden über flagcdn.com anhand des ISO-Codes geladen.
 const RAW_COUNTRIES = [
-  // ---------- Europa ----------
   ["al", "Albanien", "Tirana", "Europa", 28748, 2760000],
   ["ad", "Andorra", "Andorra la Vella", "Europa", 468, 80000],
   ["be", "Belgien", "Brüssel", "Europa", 30528, 11800000],
@@ -49,7 +46,6 @@ const RAW_COUNTRIES = [
   ["gb", "Vereinigtes Königreich", "London", "Europa", 243610, 68300000],
   ["cy", "Zypern", "Nikosia", "Europa", 9251, 1260000],
 
-  // ---------- Asien ----------
   ["af", "Afghanistan", "Kabul", "Asien", 652864, 42000000],
   ["am", "Armenien", "Eriwan", "Asien", 29743, 2990000],
   ["az", "Aserbaidschan", "Baku", "Asien", 86600, 10300000],
@@ -99,7 +95,6 @@ const RAW_COUNTRIES = [
   ["ae", "Vereinigte Arabische Emirate", "Abu Dhabi", "Asien", 83600, 9500000],
   ["vn", "Vietnam", "Hanoi", "Asien", 331212, 100000000],
 
-  // ---------- Afrika ----------
   ["eg", "Ägypten", "Kairo", "Afrika", 1002450, 112000000],
   ["gq", "Äquatorialguinea", "Malabo", "Afrika", 28051, 1740000],
   ["et", "Äthiopien", "Addis Abeba", "Afrika", 1104300, 126000000],
@@ -155,7 +150,6 @@ const RAW_COUNTRIES = [
   ["ug", "Uganda", "Kampala", "Afrika", 241550, 48600000],
   ["cf", "Zentralafrikanische Republik", "Bangui", "Afrika", 622984, 5700000],
 
-  // ---------- Nordamerika (inkl. Mittelamerika & Karibik) ----------
   ["ag", "Antigua und Barbuda", "Saint John's", "Nordamerika", 442, 94000],
   ["bs", "Bahamas", "Nassau", "Nordamerika", 13943, 410000],
   ["bb", "Barbados", "Bridgetown", "Nordamerika", 430, 280000],
@@ -180,7 +174,6 @@ const RAW_COUNTRIES = [
   ["tt", "Trinidad und Tobago", "Port of Spain", "Nordamerika", 5130, 1530000],
   ["us", "Vereinigte Staaten", "Washington, D.C.", "Nordamerika", 9833517, 335000000],
 
-  // ---------- Südamerika ----------
   ["ar", "Argentinien", "Buenos Aires", "Südamerika", 2780400, 46000000],
   ["bo", "Bolivien", "Sucre", "Südamerika", 1098581, 12200000],
   ["br", "Brasilien", "Brasília", "Südamerika", 8515767, 216400000],
@@ -194,7 +187,6 @@ const RAW_COUNTRIES = [
   ["uy", "Uruguay", "Montevideo", "Südamerika", 176215, 3400000],
   ["ve", "Venezuela", "Caracas", "Südamerika", 916445, 28800000],
 
-  // ---------- Ozeanien ----------
   ["au", "Australien", "Canberra", "Ozeanien", 7692024, 26600000],
   ["fj", "Fidschi", "Suva", "Ozeanien", 18272, 930000],
   ["ki", "Kiribati", "Tarawa", "Ozeanien", 811, 130000],
@@ -215,5 +207,4 @@ const COUNTRIES = RAW_COUNTRIES.map(([code, name, capital, continent, area, popu
   code, name, capital, continent, area, population,
 }));
 
-// Für Node-Tests (im Browser ignoriert)
 if (typeof module !== "undefined") module.exports = { COUNTRIES };
