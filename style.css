@@ -36,6 +36,7 @@ body {
 
 main { max-width: 1300px; margin: 0 auto; padding: 0 1rem 3rem; }
 
+/* Controls */
 .controls {
   position: sticky;
   top: 0;
@@ -82,6 +83,7 @@ main { max-width: 1300px; margin: 0 auto; padding: 0 1rem 3rem; }
 
 .count { color: var(--muted); margin: .5rem 0 1rem; }
 
+/* Country grid */
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
@@ -154,6 +156,7 @@ main { max-width: 1300px; margin: 0 auto; padding: 0 1rem 3rem; }
 
 .empty { text-align: center; color: var(--muted); padding: 3rem 0; font-size: 1.1rem; }
 
+/* Country details dialog */
 body.modal-open { overflow: hidden; }
 .modal {
   position: fixed;
@@ -199,6 +202,7 @@ body.modal-open { overflow: hidden; }
 .info dt { color: var(--muted); }
 .info dd { margin: 0; font-weight: 600; text-align: right; }
 
+/* View tabs */
 .tabs {
   display: flex;
   justify-content: center;
@@ -223,6 +227,7 @@ body.modal-open { overflow: hidden; }
   border-color: transparent;
 }
 
+/* Map */
 .map-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -245,6 +250,7 @@ body.modal-open { overflow: hidden; }
 .map-field select:focus,
 .map-field input:focus { outline: 2px solid var(--accent); }
 
+/* Country information sidebar */
 .map-wrap {
   position: relative;
   isolation: isolate; 
@@ -273,6 +279,7 @@ body.modal-open { overflow: hidden; }
 .legend-row { display: flex; align-items: center; gap: .5rem; }
 .legend-swatch { width: 14px; height: 14px; border-radius: 3px; flex: none; }
 
+/* Overseas territories */
 .territory-badge {
   display: flex;
   align-items: center;
@@ -334,6 +341,7 @@ footer a { color: var(--accent); }
   .map-legend { position: static; margin-top: .5rem; background: var(--surface); }
 }
 
+/* Theme and autocomplete */
 :root { color-scheme: dark; }
 :root[data-theme="light"] {
   color-scheme: light;
@@ -451,6 +459,7 @@ footer a { color: var(--accent); }
   }
 }
 
+/* Map search autocomplete */
 .map-search-wrap { position: relative; flex: 1; min-width: 0; }
 .map-search-wrap input { width: 100%; }
 .map-suggestions {
@@ -484,6 +493,7 @@ footer a { color: var(--accent); }
 .map-suggestion img { width: 28px; height: 19px; object-fit: cover; border-radius: 3px; }
 .map-suggestion small { margin-left: auto; color: var(--muted); }
 
+/* Footer */
 .site-footer {
   margin-top: 2rem;
   border-top: 1px solid var(--surface-2);
