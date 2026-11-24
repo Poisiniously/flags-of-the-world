@@ -37,6 +37,7 @@ body {
 main { max-width: 1300px; margin: 0 auto; padding: 0 1rem 3rem; }
 
 /* Controls */
+/* Keep search and filters visible while browsing the country list. */
 .controls {
   position: sticky;
   top: 0;
@@ -367,6 +368,7 @@ footer a { color: var(--accent); }
   gap: 1rem;
 }
 #map { min-width: 0; }
+/* Give the selected-country panel its own column on wider screens. */
 .map-wrap.has-sidebar { grid-template-columns: minmax(0, 1fr) 300px; }
 .country-sidebar {
   position: relative;
@@ -420,6 +422,7 @@ footer a { color: var(--accent); }
 .sidebar-info { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .65rem .8rem; margin: 0; }
 .sidebar-info dt { color: var(--muted); }
 .sidebar-info dd { margin: 0; font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+/* Stack the map and country panel on smaller screens. */
 @media (max-width: 850px) {
   .map-wrap { grid-template-columns: minmax(0, 1fr); }
   .country-sidebar { max-height: none; }
@@ -453,6 +456,7 @@ footer a { color: var(--accent); }
     transform: translateY(0);
   }
 }
+/* Respect system accessibility settings by disabling the sidebar animation. */
 @media (prefers-reduced-motion: reduce) {
   .country-sidebar #sidebar-content.country-switch {
     animation: none;
