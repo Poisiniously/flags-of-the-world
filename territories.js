@@ -1,3 +1,5 @@
+// Each row stores territory codes, localized names, capital, region, parent state, area, population, and domain.
+// English name aliases are separated with | so search can match multiple spellings.
 const RAW_TERRITORIES = [
   // France
   ["gf", "GUF", "Französisch-Guayana", "French Guiana", "Cayenne", "Südamerika", "fr", 83534, 295000, ".gf"],
@@ -60,6 +62,7 @@ const RAW_TERRITORIES = [
   ["cc", "CCK", "Kokosinseln", "Cocos (Keeling) Islands|Cocos Islands", "West Island", "Asien", "au", 14, 600, ".cc"],
 ];
 
+// Expand the rows and split aliases into searchable names.
 const TERRITORIES = RAW_TERRITORIES.map(
   ([code, iso3, name, names, capital, continent, sovereign, area, population, tld]) => ({
     code, iso3, name, names: names.split("|"), capital, capitalEn: capital,
