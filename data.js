@@ -1,3 +1,4 @@
+// Each row stores: ISO alpha-2 code, German name, capital, continent, area (km²), and population.
 const RAW_COUNTRIES = [
   // Europe
   ["al", "Albanien", "Tirana", "Europa", 28748, 2760000],
@@ -209,6 +210,7 @@ const RAW_COUNTRIES = [
   ["vu", "Vanuatu", "Port Vila", "Ozeanien", 12189, 335000],
 ];
 
+// Convert compact rows into named properties used throughout the app.
 const COUNTRIES = RAW_COUNTRIES.map(([code, name, capital, continent, area, population]) => ({
   code, name, capital, continent, area, population,
 }));
