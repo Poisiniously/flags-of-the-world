@@ -1,10 +1,12 @@
 
+// API and preferences
 const API_URL =
   "https://countries.dev/countries?fields=name,alpha2Code,alpha3Code,capital,region,subregion,area,population,topLevelDomain,independent";
 const CACHE_KEY = "flags-of-the-world:countries:v4";
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 10000;
 
+// Storage helpers
 function storageGet(key) {
   try { return localStorage.getItem(key); }
   catch (_) { return null; }
@@ -27,6 +29,7 @@ const tr = key => I18N[language][key] || key;
 const localized = (key, values = {}) => Object.entries(values).reduce((text, [name, value]) => text.replaceAll(`{${name}}`, value), tr(key));
 function displayName(c) { return language === "en" ? (new Intl.DisplayNames(["en"], {type:"region"}).of(c.code.toUpperCase()) || c.name) : c.name; }
 function continentLabel(value) { return language === "de" ? value : ({Europa:"Europe",Asien:"Asia",Afrika:"Africa",Nordamerika:"North America",Südamerika:"South America",Ozeanien:"Oceania"}[value] || value); }
+// Language and theme
 function applyPreferences() {
   document.documentElement.lang = language;
   collator = new Intl.Collator(language, { sensitivity: "base" });
@@ -83,6 +86,7 @@ const savedTheme = storageGet("fotw-theme");
 setTheme(savedTheme === "light" || savedTheme === "dark" ? savedTheme : "dark");
 document.getElementById("theme-toggle").addEventListener("click", () => setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark"));
 
+// Country data and API loading
 const state = {
   query: "",
   continent: "Alle",
@@ -221,6 +225,7 @@ async function loadData(forceReload = false) {
   }
 }
 
+// Sorting and filtering
 const SORTERS = {
   "name-asc": (a, b) => collator.compare(a.name, b.name),
   "name-desc": (a, b) => collator.compare(b.name, a.name),
@@ -250,6 +255,7 @@ function formatArea(km2) {
   return `${formatter.format(km2 < 1 ? km2 : Math.round(km2))} km²`;
 }
 
+// Country directory rendering
 const grid = document.getElementById("grid");
 const countEl = document.getElementById("count");
 const emptyEl = document.getElementById("empty");
@@ -331,6 +337,7 @@ function renderFilters() {
   }
 }
 
+// Data status and initialization
 function formatTime(ts) {
   return new Date(ts).toLocaleString(language === "de" ? "de-DE" : "en-US", { dateStyle: "short", timeStyle: "short" });
 }
@@ -398,6 +405,7 @@ statusEl.addEventListener("click", (e) => {
   if (e.target.closest(".retry")) init(true);
 });
 
+// Search and sorting controls
 let searchTimer;
 document.getElementById("search").addEventListener("input", (e) => {
   clearTimeout(searchTimer);
@@ -412,6 +420,7 @@ document.getElementById("sort").addEventListener("change", (e) => {
   render();
 });
 
+// Country details dialog
 const modal = document.getElementById("modal");
 const modalFlag = document.getElementById("modal-flag");
 const modalTitle = document.getElementById("modal-title");
@@ -493,6 +502,7 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+// Search autocomplete
 const dataReady = init();
 const suggestionBox = document.getElementById("search-suggestions");
 const searchInput = document.getElementById("search");
