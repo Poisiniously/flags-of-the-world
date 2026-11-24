@@ -776,8 +776,25 @@ function createMap() {
     style: {
       version: 8,
       projection: { type: "globe" },
-      sources: {},
-      layers: [{ id: "background", type: "background", paint: { "background-color": "#B9D9EB" } }],
+      sources: {
+        "ocean-texture": {
+          type: "raster",
+          tiles: [
+            "https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}",
+          ],
+          tileSize: 256,
+          attribution: "Ocean bathymetry: Esri, Garmin, GEBCO, NOAA NGDC, and contributors.",
+        },
+      },
+      layers: [
+        { id: "background", type: "background", paint: { "background-color": "#B9D9EB" } },
+        {
+          id: "ocean-texture",
+          type: "raster",
+          source: "ocean-texture",
+          paint: { "raster-opacity": 0.62, "raster-saturation": -0.25 },
+        },
+      ],
     },
     bounds: [[-180, -80], [180, 80]],
     fitBoundsOptions: { padding: 24, maxZoom: 1.4 },
