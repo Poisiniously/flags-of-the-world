@@ -36,7 +36,6 @@ body {
 
 main { max-width: 1300px; margin: 0 auto; padding: 0 1rem 3rem; }
 
-/* ---------- Controls ---------- */
 .controls {
   position: sticky;
   top: 0;
@@ -83,7 +82,6 @@ main { max-width: 1300px; margin: 0 auto; padding: 0 1rem 3rem; }
 
 .count { color: var(--muted); margin: .5rem 0 1rem; }
 
-/* ---------- Grid ---------- */
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
@@ -156,7 +154,6 @@ main { max-width: 1300px; margin: 0 auto; padding: 0 1rem 3rem; }
 
 .empty { text-align: center; color: var(--muted); padding: 3rem 0; font-size: 1.1rem; }
 
-/* ---------- Modal ---------- */
 body.modal-open { overflow: hidden; }
 .modal {
   position: fixed;
@@ -202,7 +199,6 @@ body.modal-open { overflow: hidden; }
 .info dt { color: var(--muted); }
 .info dd { margin: 0; font-weight: 600; text-align: right; }
 
-/* ---------- Reiter ---------- */
 .tabs {
   display: flex;
   justify-content: center;
@@ -227,7 +223,6 @@ body.modal-open { overflow: hidden; }
   border-color: transparent;
 }
 
-/* ---------- Karte ---------- */
 .map-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -252,7 +247,7 @@ body.modal-open { overflow: hidden; }
 
 .map-wrap {
   position: relative;
-  isolation: isolate; /* hält die Kartenebenen unter dem Detail-Dialog */
+  isolation: isolate; 
   margin-top: .75rem;
 }
 #map {
@@ -278,7 +273,6 @@ body.modal-open { overflow: hidden; }
 .legend-row { display: flex; align-items: center; gap: .5rem; }
 .legend-swatch { width: 14px; height: 14px; border-radius: 3px; flex: none; }
 
-/* Überseegebiete: Hinweis auf das Mutterland und Liste im Seitenfenster */
 .territory-badge {
   display: flex;
   align-items: center;
@@ -340,7 +334,6 @@ footer a { color: var(--accent); }
   .map-legend { position: static; margin-top: .5rem; background: var(--surface); }
 }
 
-/* Theme switcher and autocomplete */
 :root { color-scheme: dark; }
 :root[data-theme="light"] {
   color-scheme: light;
@@ -358,7 +351,7 @@ footer a { color: var(--accent); }
 .suggestion:hover,.suggestion:focus { background:var(--surface-2); }
 .suggestion img { width:28px; height:19px; object-fit:cover; border-radius:3px; }
 .suggestion small { margin-left:auto; color:var(--muted); }
-/* Fixed country information sidebar next to the map */
+
 .map-wrap {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -424,8 +417,6 @@ footer a { color: var(--accent); }
   .country-sidebar { max-height: none; }
 }
 
-
-/* Auf Touch-Geräten bleibt die Sidebar unter der Karte und verdeckt keine Länder. */
 @media (max-width: 850px) {
   .map-wrap.has-sidebar {
     grid-template-columns: minmax(0, 1fr);
@@ -441,8 +432,6 @@ footer a { color: var(--accent); }
   }
 }
 
-
-/* Kurze Übergangsanimation beim Wechsel des ausgewählten Landes */
 .country-sidebar #sidebar-content.country-switch {
   animation: country-switch-in 220ms ease-out both;
 }
@@ -462,8 +451,6 @@ footer a { color: var(--accent); }
   }
 }
 
-
-/* Autocomplete der Kartensuche */
 .map-search-wrap { position: relative; flex: 1; min-width: 0; }
 .map-search-wrap input { width: 100%; }
 .map-suggestions {
@@ -497,8 +484,6 @@ footer a { color: var(--accent); }
 .map-suggestion img { width: 28px; height: 19px; object-fit: cover; border-radius: 3px; }
 .map-suggestion small { margin-left: auto; color: var(--muted); }
 
-
-/* ---------- Site footer ---------- */
 .site-footer {
   margin-top: 2rem;
   border-top: 1px solid var(--surface-2);
