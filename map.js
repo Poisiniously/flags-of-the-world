@@ -541,10 +541,7 @@ function updateSelectedCountryOutline(country) {
     return entry;
   });
 
-  source.setData({
-    type: "FeatureCollection",
-    features,
-  });
+  source.setData(outlineCollection({ type: "FeatureCollection", features }));
 }
 
 function matchingMapCountries(query) {
@@ -571,7 +568,7 @@ function updateMapSearchOutlines(matches) {
     const country = countryForFeature(feature);
     return country && codes.has(country.code);
   });
-  source.setData({ type: "FeatureCollection", features });
+  source.setData(outlineCollection({ type: "FeatureCollection", features }));
 }
 
 function closeMapSuggestions() {
@@ -686,10 +683,12 @@ function buildLayer() {
         ],
       },
     });
+    // Grenzlinien aus eigener Quelle (ohne Nahtlinien an der alten Datumsgrenze)
+    map.addSource("country-outlines", { type: "geojson", data: outlineData(data) });
     map.addLayer({
       id: "countries-outline",
       type: "line",
-      source: "countries",
+      source: "country-outlines",
       paint: {
         // Ursprüngliche, dezente Ländergrenzen.
         "line-color": "#0f1220",
@@ -962,6 +961,101 @@ function splitOverseasParts(features) {
   return [...main, ...extra];
 }
 
+// ---------- Datumsgrenze der Karte ----------
+// Die Kartendaten schneiden die Welt bei ±180°. Dadurch liegt die Ostspitze
+// Russlands (Tschukotka) als schmaler Streifen am linken Kartenrand. Die Karte
+// legt ihre Datumsgrenze deshalb zwischen Big Diomede (Russland) und Little
+// Diomede (USA): Alle Koordinaten werden um 11° nach Westen gedreht, Flächen auf
+// der Linie werden dort geschnitten. So liegt Tschukotka rechts am Kartenrand.
+const DATE_LINE = -169;
+const DATE_LINE_SHIFT = DATE_LINE + 180; // 11°
+// Hier treffen sich die Flächen, die in den Daten an der alten Linie (±180°) endeten
+const SEAM_X = 180 - DATE_LINE_SHIFT;
+
+function shiftRingX(ring, dx) {
+  return ring.map(([x, ...rest]) => [x + dx, ...rest]);
+}
+
+function rotatePolygon(polygon) {
+  const outer = polygon[0] || [];
+  if (!outer.length) return [];
+  let min = Infinity;
+  let max = -Infinity;
+  for (const [x] of outer) {
+    if (x < min) min = x;
+    if (x > max) max = x;
+  }
+  const eastShift = -DATE_LINE_SHIFT;
+  const westShift = 360 - DATE_LINE_SHIFT;
+  if (min >= DATE_LINE) return [polygon.map((r) => shiftRingX(r, eastShift))];
+  if (max <= DATE_LINE) return [polygon.map((r) => shiftRingX(r, westShift))];
+  // Die Fläche liegt auf der Linie: auf beiden Seiten abschneiden
+  const parts = [];
+  for (const [keepWest, shift] of [[false, eastShift], [true, westShift]]) {
+    const outerClip = clipRingAtLongitude(outer, DATE_LINE, keepWest);
+    if (!outerClip.length) continue;
+    const holes = polygon.slice(1).map((r) => clipRingAtLongitude(r, DATE_LINE, keepWest)).filter((r) => r.length);
+    parts.push([outerClip, ...holes].map((r) => shiftRingX(r, shift)));
+  }
+  return parts;
+}
+
+function rotateWorld(features) {
+  return features.map((feature) => {
+    const g = feature.geometry;
+    if (!g) return feature;
+    if (g.type === "Polygon") {
+      const parts = rotatePolygon(g.coordinates);
+      return {
+        ...feature,
+        geometry: parts.length === 1 ? { type: "Polygon", coordinates: parts[0] } : { type: "MultiPolygon", coordinates: parts },
+      };
+    }
+    if (g.type === "MultiPolygon") {
+      return { ...feature, geometry: { type: "MultiPolygon", coordinates: g.coordinates.flatMap(rotatePolygon) } };
+    }
+    return feature;
+  });
+}
+
+// Grenzlinien aus den Polygonen. Kanten genau auf der Nahtlinie (SEAM_X) werden
+// weggelassen, sonst zöge sich ein Strich durch Tschukotka, Fidschi usw.
+function outlineCollection(collection) {
+  const isSeam = (a, b) => Math.abs(a[0] - SEAM_X) < 1e-6 && Math.abs(b[0] - SEAM_X) < 1e-6;
+  const features = [];
+  for (const feature of collection.features) {
+    const g = feature.geometry;
+    if (!g) continue;
+    const polygons = g.type === "Polygon" ? [g.coordinates] : g.type === "MultiPolygon" ? g.coordinates : [];
+    const lines = [];
+    for (const polygon of polygons) {
+      for (const ring of polygon) {
+        let line = [];
+        for (let i = 0; i < ring.length; i++) {
+          const point = ring[i];
+          if (!line.length) { line.push(point); continue; }
+          if (isSeam(ring[i - 1], point)) {
+            if (line.length > 1) lines.push(line);
+            line = [point];
+          } else {
+            line.push(point);
+          }
+        }
+        if (line.length > 1) lines.push(line);
+      }
+    }
+    if (lines.length) features.push({ type: "Feature", properties: {}, geometry: { type: "MultiLineString", coordinates: lines } });
+  }
+  return { type: "FeatureCollection", features };
+}
+
+// Die Grenzlinien aller Länder ändern sich nicht beim Umfärben: einmal berechnen
+let outlineCache = null;
+function outlineData(collection) {
+  if (!outlineCache) outlineCache = outlineCollection(collection);
+  return outlineCache;
+}
+
 async function fetchGeo() {
   if (geoData) return geoData;
 
@@ -999,7 +1093,8 @@ async function fetchGeo() {
     });
 
   if (features.length < 150) throw new Error("Zu wenige Ländergrenzen geladen");
-  geoData = { type: "FeatureCollection", features: splitOverseasParts(features) };
+  geoData = { type: "FeatureCollection", features: rotateWorld(splitOverseasParts(features)) };
+  outlineCache = null;
   console.info(`Natural Earth: ${features.length} Ländergrenzen geladen`);
   return geoData;
 }
