@@ -7,6 +7,7 @@ const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 10000;
 
 // Storage helpers
+// Storage access is guarded because browsers can disable localStorage.
 function storageGet(key) {
   try { return localStorage.getItem(key); }
   catch (_) { return null; }
@@ -100,6 +101,7 @@ let nf = new Intl.NumberFormat(language === "de" ? "de-DE" : "en-US");
 
 const LOCAL = new Map(COUNTRIES.map((c) => [c.code, c]));
 
+// Normalize accents and German ß so searches are forgiving.
 function normalize(str) {
   return str
     .toLowerCase()
@@ -118,6 +120,7 @@ function withSearchText(c) {
   return { ...c, searchText: normalize(`${c.name} ${englishName} ${c.capital} ${c.capitalEn || ""} ${c.code} ${c.tld}`) };
 }
 
+// Merge live API fields with bundled values for consistent names and continent labels.
 function mapApiCountry(c) {
   const code = String(c.alpha2Code || "").toLowerCase();
   if (!code) return null;
@@ -149,6 +152,7 @@ function mapApiCountry(c) {
   };
 }
 
+// Reject incomplete API responses instead of replacing the working country list.
 function parseApiResponse(data) {
   if (!Array.isArray(data)) throw new Error("Unerwartetes Antwortformat");
   const byCode = new Map();
@@ -174,6 +178,7 @@ async function fetchCountries() {
   }
 }
 
+// Validate cached data before using it, including its timestamp and required fields.
 function readCache() {
   try {
     const raw = JSON.parse(storageGet(CACHE_KEY));
@@ -209,6 +214,7 @@ function offlineFallback() {
   return COUNTRIES.map((c) => ({ ...c, tld: fallbackTld(c.code) }));
 }
 
+// Prefer fresh cache, then live data; fall back to stale cache or bundled data offline.
 async function loadData(forceReload = false) {
   const cached = readCache();
   if (!forceReload && cached && Date.now() - cached.time < CACHE_TTL_MS) {
@@ -238,6 +244,7 @@ const SORTERS = {
   "pop-asc": (a, b) => a.population - b.population,
 };
 
+// Apply the active continent and text filters, then sort the resulting list.
 function getVisible() {
   const q = normalize(state.query);
   return items
@@ -262,6 +269,7 @@ const emptyEl = document.getElementById("empty");
 const statusEl = document.getElementById("status");
 const sourceEl = document.getElementById("source");
 
+// Rebuild the directory in one DOM update; flag images load lazily as needed.
 function render() {
   const list = getVisible();
 
@@ -377,6 +385,7 @@ function showSource({ source, time }) {
 }
 
 let dataInitPromise = null;
+// Share an in-flight initialization so multiple triggers cannot start duplicate requests.
 async function init(forceReload = false) {
   if (dataInitPromise) return dataInitPromise;
 
@@ -427,6 +436,7 @@ const modalTitle = document.getElementById("modal-title");
 const modalInfo = document.getElementById("modal-info");
 let lastFocus = null;
 
+// Remember the triggering element so keyboard focus can return after the dialog closes.
 function openModal(code) {
   const c = items.find((x) => x.code === code);
   if (!c) return;
