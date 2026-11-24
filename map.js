@@ -777,7 +777,7 @@ function createMap() {
       version: 8,
       projection: { type: "globe" },
       sources: {},
-      layers: [{ id: "background", type: "background", paint: { "background-color": "#2186c4" } }],
+      layers: [{ id: "background", type: "background", paint: { "background-color": "#B9D9EB" } }],
     },
     bounds: [[-180, -80], [180, 80]],
     fitBoundsOptions: { padding: 24, maxZoom: 1.4 },
