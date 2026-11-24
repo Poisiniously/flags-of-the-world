@@ -1,5 +1,6 @@
 import * as maplibregl from "https://unpkg.com/maplibre-gl@6.19.0/dist/maplibre-gl.mjs";
 
+// Map data and color scales
 const GEOJSON_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_admin_0_countries.geojson";
 
 const CONTINENT_COLORS = {
@@ -36,6 +37,7 @@ let mapStartPromise = null;
 let colorMode = "continent";
 let selectedCountry = null;
 
+// Country code lookup
 const ISO3_BY_CODE = {
   "ad": "AND", "ae": "ARE", "af": "AFG", "ag": "ATG", "al": "ALB",
   "am": "ARM", "ao": "AGO", "ar": "ARG", "at": "AUT", "au": "AUS",
@@ -98,6 +100,7 @@ const mapColorEl = document.getElementById("map-color");
 const mapJumpEl = document.getElementById("map-jump");
 const mapJumpSuggestions = document.getElementById("map-jump-suggestions");
 
+// Map status and country lookup
 function setMapStatus(content, { warn = false, retry = false } = {}) {
   mapStatusEl.className = "status" + (warn ? " warn" : "");
   mapStatusEl.replaceChildren();
@@ -207,6 +210,7 @@ function featureForCountry(country) {
   return exact || matches[0] || null;
 }
 
+// Country colors and territory stripes
 function binIndex(value, bins) {
   let i = 0;
   while (i < bins.length && value >= bins[i]) i++;
@@ -331,6 +335,7 @@ function mapFeatureCollection() {
   };
 }
 
+// Map legend and country details
 function renderLegend() {
   mapLegendEl.replaceChildren();
   let title;
@@ -477,6 +482,7 @@ function showCountrySidebar(c) {
   if (map) requestAnimationFrame(() => map.resize());
 }
 
+// Country selection and search
 function updateSelectedCountryOutline(country) {
   const source = map?.getSource("selected-country-outline");
   if (!source) return;
@@ -595,6 +601,7 @@ function hideCountrySidebar() {
   if (map) requestAnimationFrame(() => map.resize());
 }
 
+// MapLibre layers and initialization
 function buildLayer() {
   rebuildLookup();
   featureIdByCode.clear();
@@ -783,6 +790,7 @@ function jumpTo(name) {
   showCountrySidebar(country);
 }
 
+// Geographic adjustments for map boundaries
 const OVERSEAS_PARTS = {
   FRA: [
     { code: "gf", bbox: [-55, 2, -51, 6] },
@@ -895,6 +903,7 @@ function splitOverseasParts(features) {
   return [...main, ...extra];
 }
 
+// Shift the map date line
 const DATE_LINE = -169;
 const DATE_LINE_SHIFT = DATE_LINE + 180;
 const SEAM_X = 180 - DATE_LINE_SHIFT;
@@ -979,6 +988,7 @@ function outlineData(collection) {
   return outlineCache;
 }
 
+// Load map data
 async function fetchGeo() {
   if (geoData) return geoData;
 
@@ -1068,6 +1078,7 @@ async function startMap() {
   return mapStartPromise;
 }
 
+// Map interactions and view navigation
 document.getElementById("sidebar-close")?.addEventListener("click", hideCountrySidebar);
 mapStatusEl.addEventListener("click", async (e) => {
   const retryButton = e.target.closest(".retry");
