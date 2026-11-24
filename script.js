@@ -2,7 +2,7 @@
 const API_URL =
   "https://countries.dev/countries?fields=name,alpha2Code,alpha3Code,capital,region,subregion,area,population,topLevelDomain,independent";
 const CACHE_KEY = "flags-of-the-world:countries:v4";
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 Stunden
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 10000;
 
 function storageGet(key) {
@@ -134,7 +134,7 @@ function mapApiCountry(c) {
 
   return {
     code,
-    iso3: c.alpha3Code || null, // wird für die Zuordnung zur Weltkarte gebraucht
+    iso3: c.alpha3Code || null,
     name: (local && local.name) || c.name || code.toUpperCase(),
     capital: (local && local.capital) || (c.capital && c.capital[0]) || "–",
     capitalEn: (c.capital && c.capital[0]) || (local && local.capital) || "–",
