@@ -202,17 +202,26 @@ function countryForFeature(feature) {
 
 function featureIdsForCountry(country) {
   if (!country) return [];
-  if (country.code === "ru") return ["RUS-EU", "RUS-AS"];
-  return [featureIdForCountry(country)];
+  const baseId = featureIdForCountry(country);
+  const splitFeatures = geoData?.features.filter((feature) =>
+    countryForFeature(feature)?.code === country.code && feature.properties?.continentOverride
+  ) || [];
+  if (splitFeatures.length) {
+    return splitFeatures.map((feature) => {
+      const continent = feature.properties.continentOverride;
+      return `${baseId}-${continent === "Europa" ? "EU" : "AS"}`;
+    });
+  }
+  return [baseId];
 }
 
 function featureForCountry(country) {
   if (!country || !geoData) return null;
   const matches = geoData.features.filter((feature) => countryForFeature(feature)?.code === country.code);
   if (!matches.length) return null;
-  // Russia is intentionally split into European and Asian features for continent coloring.
-  // Merge both geometries for search zooming and the selected-country outline.
-  if (country.code === "ru") {
+  // Merge all continent-split pieces so search zooming and the selected outline
+  // always cover the complete country (for example Russia and Türkiye).
+  if (matches.some((feature) => feature.properties?.continentOverride)) {
     const coordinates = matches.flatMap((feature) => {
       const geometry = feature.geometry;
       if (geometry?.type === "Polygon") return [geometry.coordinates];
@@ -341,9 +350,9 @@ function mapFeatureCollection() {
       return {
         ...feature,
         ...(geometry ? { geometry } : {}),
-        // Give the two Russian continent sections distinct feature IDs so both remain independently clickable.
-        id: c?.code === "ru" && feature.properties?.continentOverride
-          ? `RUS-${feature.properties.continentOverride === "Europa" ? "EU" : "AS"}`
+        // Split-country pieces need unique IDs for reliable feature-state selection.
+        id: c && feature.properties?.continentOverride
+          ? `${id}-${feature.properties.continentOverride === "Europa" ? "EU" : "AS"}`
           : id,
         properties: {
           ...(feature.properties || {}),
