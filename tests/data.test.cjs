@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
+const { execFileSync } = require("node:child_process");
 
 const root = path.resolve(__dirname, "..");
 
@@ -79,4 +80,52 @@ test("README documents all eleven themes and the offline map behavior", () => {
     assert.ok(readme.toLowerCase().includes(theme), `Missing theme documentation: ${theme}`);
   }
   assert.match(readme, /interactive map.*offline|map.*offline.*first successful online visit/i);
+});
+
+
+test("application JavaScript files pass Node syntax checks", () => {
+  for (const file of ["script.js", "map.js", "data.js", "territories.js", "sw.js"]) {
+    const source = fs.readFileSync(path.join(root, file), "utf8");
+    assert.doesNotThrow(
+      () => execFileSync(process.execPath, ["--check", "--input-type=module"], {
+        input: source,
+        encoding: "utf8",
+        stdio: ["pipe", "pipe", "pipe"],
+      }),
+      `${file} contains a JavaScript syntax error`
+    );
+  }
+});
+
+test("map library is loaded lazily so import failures can be handled", () => {
+  const mapSource = fs.readFileSync(path.join(root, "map.js"), "utf8");
+  assert.match(mapSource, /const MAPLIBRE_URL\s*=/);
+  assert.match(mapSource, /maplibregl\s*=\s*await import\(MAPLIBRE_URL\)/);
+  assert.match(mapSource, /throw new Error\("maplibre", \{ cause: error \}\)/);
+  assert.doesNotMatch(mapSource, /^import\s+\*\s+as\s+maplibregl/m);
+});
+
+test("removed map hint has no remaining translation or style references", () => {
+  const script = fs.readFileSync(path.join(root, "script.js"), "utf8");
+  const styles = fs.readFileSync(path.join(root, "style.css"), "utf8");
+  const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  assert.doesNotMatch(script, /map-hint|hint:\s*["']Klicke auf ein Land/);
+  assert.doesNotMatch(styles, /\.map-hint/);
+  assert.doesNotMatch(html, /map-hint|Klicke auf ein Land für Flagge und Infos/);
+});
+
+test("HTML IDs are unique and JavaScript element references exist", () => {
+  const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  const ids = [...html.matchAll(/\bid=["']([^"']+)["']/g)].map((match) => match[1]);
+  assert.equal(new Set(ids).size, ids.length, "index.html contains duplicate IDs");
+
+  const idSet = new Set(ids);
+  for (const file of ["script.js", "map.js"]) {
+    const source = fs.readFileSync(path.join(root, file), "utf8");
+    const references = [...source.matchAll(/getElementById\(["']([^"']+)["']\)/g)]
+      .map((match) => match[1]);
+    for (const id of references) {
+      assert.ok(idSet.has(id), `${file} references missing HTML ID: ${id}`);
+    }
+  }
 });
