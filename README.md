@@ -1,4 +1,4 @@
-# 🌍 Flags of the World
+# ♁ Flags of the World
 
 An interactive, bilingual directory of **197 countries**. Browse national flags, search country information, sort and filter the directory, or explore countries on an interactive world map.
 
