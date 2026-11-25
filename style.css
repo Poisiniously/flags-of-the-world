@@ -381,7 +381,6 @@ body.modal-open { overflow: hidden; }
 }
 .territory-chip:hover { background: var(--surface-2); }
 .territory-chip img { width: 18px; height: auto; border-radius: 2px; }
-.map-hint { color: var(--muted); font-size: .85rem; margin: .75rem 0 0; }
 
 footer { text-align: center; color: var(--muted); font-size: .85rem; padding: 2rem 1rem; }
 footer a { color: var(--accent); }
