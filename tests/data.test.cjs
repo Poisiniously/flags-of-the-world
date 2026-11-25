@@ -84,7 +84,7 @@ test("README documents all eleven themes and the offline map behavior", () => {
 
 
 test("application JavaScript files pass Node syntax checks", () => {
-  for (const file of ["script.js", "map.js", "data.js", "territories.js", "sw.js"]) {
+  for (const file of ["script.js", "quiz.js", "map.js", "data.js", "territories.js", "sw.js"]) {
     const source = fs.readFileSync(path.join(root, file), "utf8");
     assert.doesNotThrow(
       () => execFileSync(process.execPath, ["--check", "--input-type=module"], {
@@ -128,7 +128,7 @@ test("HTML IDs are unique and JavaScript element references exist", () => {
   assert.equal(new Set(ids).size, ids.length, "index.html contains duplicate IDs");
 
   const idSet = new Set(ids);
-  for (const file of ["script.js", "map.js"]) {
+  for (const file of ["script.js", "quiz.js", "map.js"]) {
     const source = fs.readFileSync(path.join(root, file), "utf8");
     const references = [...source.matchAll(/getElementById\(["']([^"']+)["']\)/g)]
       .map((match) => match[1]);
@@ -136,4 +136,22 @@ test("HTML IDs are unique and JavaScript element references exist", () => {
       assert.ok(idSet.has(id), `${file} references missing HTML ID: ${id}`);
     }
   }
+});
+
+
+test("country quiz is integrated, bilingual, and uses unique four-choice questions", () => {
+  const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  const script = fs.readFileSync(path.join(root, "quiz.js"), "utf8");
+  const appScript = fs.readFileSync(path.join(root, "map.js"), "utf8");
+  assert.match(html, /id="tab-quiz"[^>]*data-view="quiz"/);
+  assert.match(html, /id="view-quiz"/);
+  assert.match(html, /<script src="quiz\\.js"><\\/script>/);
+  assert.match(appScript, /viewQuiz\\.hidden = name !== "quiz"/);
+  assert.match(script, /const QUESTION_COUNT = 10/);
+  assert.match(script, /COUNTRIES\\.filter/);
+  assert.match(script, /options:shuffle\\(\\[country,/);
+  assert.match(script, /language-changed/);
+  assert.match(script, /flagcdn\\.com/);
+  assert.match(script, /quiz-mode/);
+  assert.match(script, /quiz-continent/);
 });
