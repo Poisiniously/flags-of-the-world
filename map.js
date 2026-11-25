@@ -95,6 +95,7 @@ let mapInteractionsReady = false;
 
 const viewFlags = document.getElementById("view-flags");
 const viewMap = document.getElementById("view-map");
+const viewQuiz = document.getElementById("view-quiz");
 const mapStatusEl = document.getElementById("map-status");
 const mapLegendEl = document.getElementById("map-legend");
 const mapColorEl = document.getElementById("map-color");
@@ -1253,6 +1254,7 @@ function showView(name, updateHash = true) {
   }
   viewFlags.hidden = name !== "flags";
   viewMap.hidden = name !== "map";
+  viewQuiz.hidden = name !== "quiz";
 
   if (name === "map") {
     startMap();
@@ -1260,7 +1262,7 @@ function showView(name, updateHash = true) {
   }
   if (updateHash) {
     try {
-      history.replaceState(null, "", name === "map" ? "#karte" : location.pathname + location.search);
+      history.replaceState(null, "", name === "map" ? "#karte" : name === "quiz" ? "#quiz" : location.pathname + location.search);
     } catch (_) {  }
   }
 }
@@ -1276,5 +1278,6 @@ for (const t of tabButtons) {
   });
 }
 
-window.addEventListener("hashchange", () => showView(location.hash === "#karte" ? "map" : "flags", false));
+window.addEventListener("hashchange", () => showView(location.hash === "#karte" ? "map" : location.hash === "#quiz" ? "quiz" : "flags", false));
 if (location.hash === "#karte") showView("map", false);
+else if (location.hash === "#quiz") showView("quiz", false);
