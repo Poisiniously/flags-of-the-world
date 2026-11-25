@@ -98,15 +98,34 @@ document.getElementById("language-toggle").addEventListener("click", () => {
   storageSet("fotw-language", language);
   applyPreferences();
 });
-const THEMES = ["dark", "light", "ocean", "forest", "sunset", "contrast"];
+const THEMES = ["dark", "light", "ocean", "forest", "sunset", "contrast", "lavender", "sakura", "paper", "retro", "midnight"];
 const THEME_NAMES = {
-  de: { dark: "Dunkel", light: "Hell", ocean: "Ozean", forest: "Wald", sunset: "Sonnenuntergang", contrast: "Hoher Kontrast" },
-  en: { dark: "Dark", light: "Light", ocean: "Ocean", forest: "Forest", sunset: "Sunset", contrast: "High contrast" },
+  de: {
+    dark: "Dunkel", light: "Hell", ocean: "Ozean", forest: "Wald",
+    sunset: "Sonnenuntergang", contrast: "Hoher Kontrast",
+    lavender: "Lavendel-Glass", sakura: "Sakura", paper: "Papier",
+    retro: "Retro-Terminal", midnight: "Mitternacht"
+  },
+  en: {
+    dark: "Dark", light: "Light", ocean: "Ocean", forest: "Forest",
+    sunset: "Sunset", contrast: "High contrast",
+    lavender: "Lavender Glass", sakura: "Sakura", paper: "Paper",
+    retro: "Retro Terminal", midnight: "Midnight"
+  },
 };
 function renderThemeOptions() {
   const select = document.getElementById("theme-select");
-  for (const option of select.options) option.textContent = THEME_NAMES[language][option.value];
-  select.value = document.documentElement.dataset.theme;
+  const selectedTheme = THEMES.includes(document.documentElement.dataset.theme)
+    ? document.documentElement.dataset.theme
+    : "dark";
+  select.replaceChildren();
+  for (const theme of THEMES) {
+    const option = document.createElement("option");
+    option.value = theme;
+    option.textContent = THEME_NAMES[language][theme];
+    select.appendChild(option);
+  }
+  select.value = selectedTheme;
   select.setAttribute("aria-label", language === "de" ? "Farbschema" : "Theme");
 }
 function setTheme(value) {
