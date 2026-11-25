@@ -820,7 +820,7 @@ function createMap() {
     instance.once("load", () => resolve(instance));
     instance.once("error", (event) => {
       if (!instance.isStyleLoaded()) {
-        reject(event.error || new Error("MapLibre konnte nicht initialisiert werden"));
+        reject(event.error || new Error(language === "de" ? "MapLibre konnte nicht initialisiert werden" : "MapLibre could not be initialized"));
       }
     });
   });
