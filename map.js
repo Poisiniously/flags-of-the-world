@@ -1,4 +1,5 @@
-import * as maplibregl from "https://unpkg.com/maplibre-gl@6.19.0/dist/maplibre-gl.mjs";
+const MAPLIBRE_URL = "https://unpkg.com/maplibre-gl@6.19.0/dist/maplibre-gl.mjs";
+let maplibregl = null;
 
 // Map data and color scales
 const GEOJSON_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_admin_0_countries.geojson";
@@ -1136,7 +1137,13 @@ async function startMap() {
     setMapStatus(language === "de" ? "Lade Karte …" : "Loading map …");
 
     try {
-      if (typeof maplibregl === "undefined") throw new Error("maplibre");
+      if (!maplibregl) {
+        try {
+          maplibregl = await import(MAPLIBRE_URL);
+        } catch (error) {
+          throw new Error("maplibre", { cause: error });
+        }
+      }
       if (!map) await createMap();
       await Promise.all([dataReady, fetchGeo()]);
       if (!items.some((c) => c.iso3 || ISO3_BY_CODE[c.code])) throw new Error("no-country-codes");
