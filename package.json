@@ -1,0 +1,10 @@
+{
+  "name": "flags-of-the-world",
+  "private": true,
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
