@@ -65,6 +65,14 @@ function applyPreferences() {
   document.getElementById("footer-description").textContent = language === "de"
     ? "Die Flaggen, Länder und Hauptstädte der Welt – übersichtlich an einem Ort."
     : "Explore the flags, countries and capitals of the world – all in one place.";
+  document.getElementById("footer-note").textContent = language === "de"
+    ? "Angaben zu Fläche und Einwohnerzahl sind Richtwerte und können vom aktuellen Stand abweichen."
+    : "Area and population figures are approximate and may differ from current values.";
+  document.getElementById("footer-explore-title").textContent = language === "de" ? "Entdecken" : "Explore";
+  document.getElementById("footer-link-flags").textContent = `🏳️ ${tr("flags")}`;
+  document.getElementById("footer-link-map").textContent = `🗺️ ${tr("map")}`;
+  document.getElementById("footer-top").textContent = language === "de" ? "↑ Nach oben" : "↑ Back to top";
+  document.getElementById("footer-year").textContent = new Date().getFullYear();
   document.getElementById("footer-sources-title").textContent = language === "de" ? "Daten & Quellen" : "Data & sources";
   document.getElementById("footer-country-data").textContent = language === "de" ? " – Länderdaten" : " – country data";
   document.getElementById("footer-flags").textContent = language === "de" ? " – Flaggen" : " – flags";
