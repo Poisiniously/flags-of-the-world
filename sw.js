@@ -1,4 +1,4 @@
-const CACHE_NAME = "fotw-offline-v1";
+const CACHE_NAME = "fotw-offline-v2";
 const APP_ASSETS = [
   "./",
   "./index.html",
@@ -6,6 +6,7 @@ const APP_ASSETS = [
   "./data.js",
   "./territories.js",
   "./script.js",
+  "./quiz.js",
   "./map.js",
 ];
 const REMOTE_ASSETS = [
