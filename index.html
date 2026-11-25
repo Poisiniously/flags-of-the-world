@@ -136,5 +136,14 @@
   <script src="territories.js"></script>
   <script src="script.js"></script>
   <script type="module" src="map.js"></script>
+  <script>
+    if ("serviceWorker" in navigator && location.protocol !== "file:") {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch((error) => {
+          console.warn("Offline support could not be enabled:", error);
+        });
+      });
+    }
+  </script>
 </body>
 </html>
