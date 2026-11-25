@@ -1075,8 +1075,21 @@ function outlineData(collection) {
 async function fetchGeo() {
   if (geoData) return geoData;
 
-  const response = await fetch(GEOJSON_URL, { cache: "force-cache" });
-  if (!response.ok) throw new Error(language === "de" ? `Kartendaten: HTTP ${response.status}` : `Map data: HTTP ${response.status}`);
+  let response;
+  try {
+    response = await fetch(GEOJSON_URL, { cache: "force-cache" });
+    if (!response.ok) throw new Error(language === "de" ? `Kartendaten: HTTP ${response.status}` : `Map data: HTTP ${response.status}`);
+    if ("caches" in window) {
+      caches.open("fotw-map-data-v1")
+        .then((cache) => cache.put(GEOJSON_URL, response.clone()))
+        .catch((error) => console.warn("Map data could not be cached:", error));
+    }
+  } catch (networkError) {
+    const cachedResponse = "caches" in window ? await caches.match(GEOJSON_URL).catch(() => null) : null;
+    if (!cachedResponse) throw networkError;
+    response = cachedResponse;
+    console.info("Natural Earth: using cached map boundaries (offline fallback).");
+  }
 
   const raw = await response.json();
   if (!raw || raw.type !== "FeatureCollection" || !Array.isArray(raw.features)) {
