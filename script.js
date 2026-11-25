@@ -23,8 +23,8 @@ const CONTINENTS = ["Europa", "Asien", "Afrika", "Nordamerika", "Südamerika", "
 let language = storageGet("fotw-language");
 if (language !== "de" && language !== "en") language = "de";
 const I18N = {
-  de: { capital:"Hauptstadt", continent:"Kontinent", domain:"Domain-Endung", area:"Fläche", population:"Einwohner", density:"Bevölkerungsdichte", code:"Ländercode", details:"Mehr Details", countries:"Länder", of:"von", all:"Alle", noData:"ohne Daten", territoryLegend:"Überseegebiet (gestreift)", territoryOf:"Überseegebiet von", territories:"Überseegebiete", noResults:"Keine Treffer. Versuch einen anderen Suchbegriff oder Filter. ⌕", search:"Land, Hauptstadt oder Domain-Endung suchen …", hint:"Klicke auf ein Land für Flagge und Infos. Mit Mausrad oder Pinch zoomen, mit gedrückter Maustaste verschieben.", loading:"Lade Länderdaten …", retry:"Erneut versuchen", live:"Live-Daten von countries.dev", cached:"Daten von countries.dev (Stand {time})", stale:"Online-Abruf fehlgeschlagen – zeige gespeicherte Daten vom {time}.", offline:"Online-Abruf fehlgeschlagen – zeige mitgelieferte Offline-Daten.", offlineSource:"Offline-Daten", cachedSource:"Zwischengespeicherte Daten", sort:"Sortieren nach", mapColor:"Einfärben nach", mapJump:"Zu Land springen", mapJumpPlaceholder:"Landesnamen eingeben …", searchLabel:"Suche", continentFilters:"Kontinent-Filter", flags:"Flaggen", map:"Karte", view:"Ansicht", controls:"Suche, Filter und Sortierung", mapSettings:"Karten-Einstellungen", worldMap:"Interaktive Weltkarte", legend:"Legende", close:"Schließen", flagAlt:"Flagge von {name}" },
-  en: { capital:"Capital", continent:"Continent", domain:"Domain suffix", area:"Area", population:"Population", density:"Population density", code:"Country code", details:"More details", countries:"countries", of:"of", all:"All", noData:"no data", territoryLegend:"Overseas territory (striped)", territoryOf:"Overseas territory of", territories:"Overseas territories", noResults:"No results. Try another search term or filter. ⌕", search:"Search country, capital or domain suffix …", hint:"Click a country to see its flag and information. Zoom with the wheel or pinch; drag to move.", loading:"Loading country data …", retry:"Try again", live:"Live data from countries.dev", cached:"Data from countries.dev (as of {time})", stale:"Could not reach the API – showing saved data from {time}.", offline:"Could not reach the API – showing bundled offline data.", offlineSource:"Offline data", cachedSource:"Cached data", sort:"Sort by", mapColor:"Color by", mapJump:"Jump to country", mapJumpPlaceholder:"Enter a country name …", searchLabel:"Search", continentFilters:"Filter by continent", flags:"Flags", map:"Map", view:"View", controls:"Search, filters and sorting", mapSettings:"Map settings", worldMap:"Interactive world map", legend:"Legend", close:"Close", flagAlt:"Flag of {name}" }
+  de: { capital:"Hauptstadt", continent:"Kontinent", domain:"Domain-Endung", area:"Fläche", population:"Einwohner", density:"Bevölkerungsdichte", code:"Ländercode", details:"Mehr Details", countries:"Länder", of:"von", all:"Alle", noData:"ohne Daten", territoryLegend:"Überseegebiet (gestreift)", territoryOf:"Überseegebiet von", territories:"Überseegebiete", noResults:"Keine Treffer. Versuch einen anderen Suchbegriff oder Filter. 🔎", search:"Land, Hauptstadt oder Domain-Endung suchen …", hint:"Klicke auf ein Land für Flagge und Infos. Mit Mausrad oder Pinch zoomen, mit gedrückter Maustaste verschieben.", loading:"Lade Länderdaten …", retry:"Erneut versuchen", live:"Live-Daten von countries.dev", cached:"Daten von countries.dev (Stand {time})", stale:"Online-Abruf fehlgeschlagen – zeige gespeicherte Daten vom {time}.", offline:"Online-Abruf fehlgeschlagen – zeige mitgelieferte Offline-Daten.", offlineSource:"Offline-Daten", cachedSource:"Zwischengespeicherte Daten", sort:"Sortieren nach", mapColor:"Einfärben nach", mapJump:"Zu Land springen", mapJumpPlaceholder:"Landesnamen eingeben …", searchLabel:"Suche", continentFilters:"Kontinent-Filter", flags:"Flaggen", map:"Karte", view:"Ansicht", controls:"Suche, Filter und Sortierung", mapSettings:"Karten-Einstellungen", worldMap:"Interaktive Weltkarte", legend:"Legende", close:"Schließen", flagAlt:"Flagge von {name}" },
+  en: { capital:"Capital", continent:"Continent", domain:"Domain suffix", area:"Area", population:"Population", density:"Population density", code:"Country code", details:"More details", countries:"countries", of:"of", all:"All", noData:"no data", territoryLegend:"Overseas territory (striped)", territoryOf:"Overseas territory of", territories:"Overseas territories", noResults:"No results. Try another search term or filter. 🔎", search:"Search country, capital or domain suffix …", hint:"Click a country to see its flag and information. Zoom with the wheel or pinch; drag to move.", loading:"Loading country data …", retry:"Try again", live:"Live data from countries.dev", cached:"Data from countries.dev (as of {time})", stale:"Could not reach the API – showing saved data from {time}.", offline:"Could not reach the API – showing bundled offline data.", offlineSource:"Offline data", cachedSource:"Cached data", sort:"Sort by", mapColor:"Color by", mapJump:"Jump to country", mapJumpPlaceholder:"Enter a country name …", searchLabel:"Search", continentFilters:"Filter by continent", flags:"Flags", map:"Map", view:"View", controls:"Search, filters and sorting", mapSettings:"Map settings", worldMap:"Interactive world map", legend:"Legend", close:"Close", flagAlt:"Flag of {name}" }
 };
 const tr = key => I18N[language][key] || key;
 const localized = (key, values = {}) => Object.entries(values).reduce((text, [name, value]) => text.replaceAll(`{${name}}`, value), tr(key));
@@ -51,8 +51,8 @@ function applyPreferences() {
     ? "Alle Flaggen der Welt mit Ländernamen und Hauptstädten – durchsuchbar, filterbar und sortierbar, dazu eine interaktive Weltkarte."
     : "Explore the flags, countries and capitals of the world. Search, filter and sort countries or explore them on an interactive world map.";
   document.querySelector(".tabs").setAttribute("aria-label", tr("view"));
-  document.getElementById("tab-flags").textContent = `⚑ ${tr("flags")}`;
-  document.getElementById("tab-map").textContent = `⌖ ${tr("map")}`;
+  document.getElementById("tab-flags").textContent = `🏳️ ${tr("flags")}`;
+  document.getElementById("tab-map").textContent = `🗺️ ${tr("map")}`;
   document.querySelector("#view-flags .controls").setAttribute("aria-label", tr("controls"));
   document.getElementById("search").setAttribute("aria-label", tr("searchLabel"));
   document.getElementById("filters").setAttribute("aria-label", tr("continentFilters"));
@@ -69,8 +69,8 @@ function applyPreferences() {
     ? "Angaben zu Fläche und Einwohnerzahl sind Richtwerte und können vom aktuellen Stand abweichen."
     : "Area and population figures are approximate and may differ from current values.";
   document.getElementById("footer-explore-title").textContent = language === "de" ? "Entdecken" : "Explore";
-  document.getElementById("footer-link-flags").textContent = `⚑ ${tr("flags")}`;
-  document.getElementById("footer-link-map").textContent = `⌖ ${tr("map")}`;
+  document.getElementById("footer-link-flags").textContent = `🏳️ ${tr("flags")}`;
+  document.getElementById("footer-link-map").textContent = `🗺️ ${tr("map")}`;
   document.getElementById("footer-top").textContent = language === "de" ? "↑ Nach oben" : "↑ Back to top";
   document.getElementById("footer-year").textContent = new Date().getFullYear();
   document.getElementById("footer-sources-title").textContent = language === "de" ? "Daten & Quellen" : "Data & sources";
@@ -88,7 +88,7 @@ document.getElementById("language-toggle").addEventListener("click", () => {
 });
 function setTheme(value) {
   document.documentElement.dataset.theme = value;
-  document.getElementById("theme-toggle").textContent = value === "dark" ? "☼ Light" : "☾ Dark";
+  document.getElementById("theme-toggle").textContent = value === "dark" ? "☀️ Light" : "🌙 Dark";
   storageSet("fotw-theme", value);
 }
 const savedTheme = storageGet("fotw-theme");
