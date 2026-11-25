@@ -9,7 +9,6 @@
   --radius: 14px;
   --hero-glow: #263066;
   --map-ocean: #91B8CE;
-  --map-bg: #0b1020;
 }
 
 * { box-sizing: border-box; }
@@ -261,10 +260,60 @@ body.modal-open { overflow: hidden; }
   margin-top: .75rem;
 }
 #map {
+  background-color: #03050d;
+  /* Starry space behind the globe: two tiled star layers over a faint nebula glow. */
+  background-image:
+    radial-gradient(1.5px 1.5px at 165px 77px, rgba(255,255,255,0.55) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 274px 48px, rgba(255,255,255,1) 50%, transparent 100%),
+    radial-gradient(1px 1px at 109px 19px, rgba(255,235,210,0.8) 50%, transparent 100%),
+    radial-gradient(1px 1px at 35px 123px, rgba(255,235,210,0.55) 50%, transparent 100%),
+    radial-gradient(1px 1px at 289px 63px, rgba(255,255,255,1) 50%, transparent 100%),
+    radial-gradient(1px 1px at 299px 203px, rgba(255,255,255,0.55) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 285px 68px, rgba(255,235,210,0.55) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 276px 60px, rgba(255,255,255,0.55) 50%, transparent 100%),
+    radial-gradient(1px 1px at 297px 292px, rgba(200,220,255,0.55) 50%, transparent 100%),
+    radial-gradient(1px 1px at 280px 32px, rgba(255,255,255,0.8) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 272px 218px, rgba(255,235,210,1) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 232px 185px, rgba(255,255,255,0.55) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 124px 41px, rgba(255,235,210,0.8) 50%, transparent 100%),
+    radial-gradient(1px 1px at 229px 147px, rgba(255,255,255,1) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 214px 84px, rgba(255,255,255,0.8) 50%, transparent 100%),
+    radial-gradient(1px 1px at 215px 20px, rgba(200,220,255,0.8) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 179px 254px, rgba(255,255,255,0.55) 50%, transparent 100%),
+    radial-gradient(1px 1px at 138px 242px, rgba(255,255,255,1) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 158px 295px, rgba(200,220,255,1) 50%, transparent 100%),
+    radial-gradient(1px 1px at 197px 177px, rgba(255,235,210,0.8) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 86px 59px, rgba(255,255,255,0.55) 50%, transparent 100%),
+    radial-gradient(1px 1px at 147px 66px, rgba(255,235,210,0.8) 50%, transparent 100%),
+    radial-gradient(1px 1px at 254px 41px, rgba(255,235,210,0.8) 50%, transparent 100%),
+    radial-gradient(1px 1px at 281px 142px, rgba(255,235,210,1) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 142px 212px, rgba(255,235,210,0.55) 50%, transparent 100%),
+    radial-gradient(1px 1px at 77px 42px, rgba(255,255,255,0.55) 50%, transparent 100%),
+    radial-gradient(2px 2px at 238px 12px, rgba(255,255,255,0.8) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 288px 4px, rgba(255,235,210,1) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 378px 326px, rgba(255,255,255,0.8) 50%, transparent 100%),
+    radial-gradient(2px 2px at 401px 407px, rgba(255,235,210,0.55) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 493px 410px, rgba(255,255,255,0.55) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 213px 451px, rgba(255,255,255,0.8) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 53px 104px, rgba(255,255,255,1) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 103px 372px, rgba(255,255,255,0.55) 50%, transparent 100%),
+    radial-gradient(2px 2px at 385px 152px, rgba(200,220,255,1) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 372px 485px, rgba(255,255,255,0.8) 50%, transparent 100%),
+    radial-gradient(2px 2px at 477px 491px, rgba(200,220,255,0.55) 50%, transparent 100%),
+    radial-gradient(2px 2px at 147px 104px, rgba(200,220,255,0.8) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 165px 23px, rgba(200,220,255,0.55) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 27px 305px, rgba(200,220,255,1) 50%, transparent 100%),
+    radial-gradient(ellipse at 20% 15%, rgba(80, 60, 160, .22), transparent 55%),
+    radial-gradient(ellipse at 85% 90%, rgba(30, 90, 150, .2), transparent 55%);
+  background-size:
+    300px 300px,300px 300px,300px 300px,300px 300px,300px 300px,300px 300px,300px 300px,300px 300px,300px 300px,300px 300px,300px 300px,300px 300px,300px 300px,300px 300px,300px 300px,300px 300px,300px 300px,300px 300px,300px 300px,300px 300px,300px 300px,300px 300px,300px 300px,300px 300px,300px 300px,300px 300px,
+    520px 520px,520px 520px,520px 520px,520px 520px,520px 520px,520px 520px,520px 520px,520px 520px,520px 520px,520px 520px,520px 520px,520px 520px,520px 520px,520px 520px,
+    auto, auto;
+}
+#map {
   height: 78vh;
   min-height: 480px;
   border-radius: var(--radius);
-  background: var(--map-bg);
   border: 1px solid var(--surface-2);
 }
 .map-legend {
@@ -351,7 +400,7 @@ footer a { color: var(--accent); }
   color-scheme: light;
   --bg:#f4f6fb; --surface:#ffffff; --surface-2:#e4e8f2;
   --text:#172033; --muted:#64708a; --accent:#405fd6; --accent-2:#8953d6;
-  --hero-glow:#cfd8f5; --map-bg:#dfe6f3;
+  --hero-glow:#cfd8f5;
 }
 :root[data-theme="dark"] { color-scheme:dark; }
 /* Additional color themes */
@@ -359,25 +408,25 @@ footer a { color: var(--accent); }
   color-scheme: dark;
   --bg:#071c26; --surface:#0d2d3b; --surface-2:#154357;
   --text:#e6f6fb; --muted:#8fb7c6; --accent:#2fc4d9; --accent-2:#3f8cff;
-  --hero-glow:#0f5468; --map-ocean:#2a7fa0; --map-bg:#05141b;
+  --hero-glow:#0f5468; --map-ocean:#2a7fa0;
 }
 :root[data-theme="forest"] {
   color-scheme: dark;
   --bg:#0f1a13; --surface:#18281d; --surface-2:#24402d;
   --text:#eaf5ec; --muted:#9bb8a3; --accent:#5fcf80; --accent-2:#c6d85a;
-  --hero-glow:#24502f; --map-ocean:#6fa3a0; --map-bg:#0a120d;
+  --hero-glow:#24502f; --map-ocean:#6fa3a0;
 }
 :root[data-theme="sunset"] {
   color-scheme: dark;
   --bg:#1f1220; --surface:#2e1a2e; --surface-2:#472a3c;
   --text:#fdeee6; --muted:#c8a3a8; --accent:#ff8a5c; --accent-2:#ff5c8a;
-  --hero-glow:#6a2c46; --map-ocean:#b88aa0; --map-bg:#150b16;
+  --hero-glow:#6a2c46; --map-ocean:#b88aa0;
 }
 :root[data-theme="contrast"] {
   color-scheme: dark;
   --bg:#000000; --surface:#0a0a0a; --surface-2:#6b6b6b;
   --text:#ffffff; --muted:#d6d6d6; --accent:#ffe14d; --accent-2:#4dd2ff;
-  --hero-glow:#1a1a1a; --map-ocean:#3d5a73; --map-bg:#000000;
+  --hero-glow:#1a1a1a; --map-ocean:#3d5a73;
 }
 .preferences { position:absolute; top:1rem; right:1rem; display:flex; gap:.5rem; }
 .preferences button, .preferences select { border:1px solid var(--surface-2); background:var(--surface); color:var(--text); border-radius:999px; padding:.45rem .8rem; cursor:pointer; }
