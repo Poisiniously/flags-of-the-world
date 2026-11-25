@@ -169,7 +169,14 @@ const GEO_ALIASES = {
   KOS: "XKX",
   PSX: "PSE",
   SAH: "MAR",
+  KAB: "KAZ", // Baikonur enclave is shown as part of Kazakhstan
 };
+
+// Natural Earth draws the leased Baikonur area as a separate circle inside Kazakhstan.
+function isBaikonur(feature) {
+  const p = (feature && feature.properties) || {};
+  return p.ADM0_A3 === "KAB" || p.ADMIN === "Baikonur" || p.NAME === "Baikonur" || p.name === "Baikonur";
+}
 
 function countryForFeature(feature) {
   if (!feature) return null;
@@ -968,7 +975,7 @@ function outlineCollection(collection) {
   const features = [];
   for (const feature of collection.features) {
     const g = feature.geometry;
-    if (!g) continue;
+    if (!g || isBaikonur(feature)) continue; // no outline circle around Baikonur
     const polygons = g.type === "Polygon" ? [g.coordinates] : g.type === "MultiPolygon" ? g.coordinates : [];
     const lines = [];
     for (const polygon of polygons) {
