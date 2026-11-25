@@ -44,7 +44,7 @@ function applyPreferences() {
   document.getElementById("map-jump").placeholder = language === "de" ? "Landesnamen eingeben …" : "Enter a country name …";
   document.getElementById("sort").innerHTML = language === "de" ? '<option value="name-asc">Alphabet (A–Z)</option><option value="name-desc">Alphabet (Z–A)</option><option value="continent">Kontinent</option><option value="area-desc">Größe (größte zuerst)</option><option value="area-asc">Größe (kleinste zuerst)</option><option value="pop-desc">Einwohner (meiste zuerst)</option><option value="pop-asc">Einwohner (wenigste zuerst)</option>' : '<option value="name-asc">Alphabetical (A–Z)</option><option value="name-desc">Alphabetical (Z–A)</option><option value="continent">Continent</option><option value="area-desc">Area (largest first)</option><option value="area-asc">Area (smallest first)</option><option value="pop-desc">Population (largest first)</option><option value="pop-asc">Population (smallest first)</option>';
   document.getElementById("map-color").innerHTML = language === "de" ? '<option value="continent">Kontinent</option><option value="population">Einwohnerzahl</option><option value="area">Fläche</option>' : '<option value="continent">Continent</option><option value="population">Population</option><option value="area">Area</option>';
-  document.querySelector(".map-hint").textContent = tr("hint");
+  document.querySelector(".map-hint")?.textContent = tr("hint");
   document.getElementById("language-toggle").textContent = language === "de" ? "DE / EN" : "EN / DE";
   document.title = language === "de" ? "Flags of the World – Alle Flaggen, Länder & Hauptstädte" : "Flags of the World – Countries, Flags & Capitals";
   document.querySelector('meta[name="description"]').content = language === "de"
@@ -55,11 +55,18 @@ function applyPreferences() {
   document.getElementById("tab-map").textContent = `🗺️ ${tr("map")}`;
   document.querySelector("#view-flags .controls").setAttribute("aria-label", tr("controls"));
   document.getElementById("search").setAttribute("aria-label", tr("searchLabel"));
+  document.getElementById("search").setAttribute("title", tr("searchLabel"));
+  document.getElementById("map-jump").setAttribute("aria-label", tr("mapJump"));
+  document.getElementById("theme-select").setAttribute("aria-label", language === "de" ? "Farbschema" : "Color theme");
+  document.querySelector(".preferences").setAttribute("aria-label", language === "de" ? "Einstellungen" : "Preferences");
   document.getElementById("filters").setAttribute("aria-label", tr("continentFilters"));
   document.getElementById("grid").setAttribute("aria-label", tr("flags"));
   document.querySelector("#view-map .map-toolbar").setAttribute("aria-label", tr("mapSettings"));
   document.getElementById("map").setAttribute("aria-label", tr("worldMap"));
   document.getElementById("map-legend").setAttribute("aria-label", tr("legend"));
+  document.querySelector("#view-map").setAttribute("aria-label", language === "de" ? "Weltkarte" : "World map");
+  document.querySelector("#view-flags").setAttribute("aria-label", language === "de" ? "Länderverzeichnis" : "Country directory");
+  document.querySelector(".count").setAttribute("aria-label", language === "de" ? "Ergebnisanzahl" : "Result count");
   document.getElementById("sidebar-close").setAttribute("aria-label", tr("close"));
   document.getElementById("modal-close").setAttribute("aria-label", tr("close"));
   document.getElementById("footer-description").textContent = language === "de"
@@ -73,6 +80,9 @@ function applyPreferences() {
   document.getElementById("footer-link-map").textContent = `🗺️ ${tr("map")}`;
   document.getElementById("footer-top").textContent = language === "de" ? "↑ Nach oben" : "↑ Back to top";
   document.getElementById("footer-year").textContent = new Date().getFullYear();
+  document.querySelector(".footer-brand").setAttribute("aria-label", language === "de" ? "Flags of the World – nach oben" : "Flags of the World – back to top");
+  document.querySelector(".footer-nav").setAttribute("aria-label", language === "de" ? "Seiten entdecken" : "Explore pages");
+  document.querySelector(".footer-sources").setAttribute("aria-label", language === "de" ? "Verwendete Datenquellen" : "Data sources");
   document.getElementById("footer-sources-title").textContent = language === "de" ? "Daten & Quellen" : "Data & sources";
   document.getElementById("footer-country-data").textContent = language === "de" ? " – Länderdaten" : " – country data";
   document.getElementById("footer-flags").textContent = language === "de" ? " – Flaggen" : " – flags";
@@ -470,7 +480,7 @@ function openModal(code) {
   const density = c.area > 0 ? c.population / c.area : 0;
   const rows = [
     [tr("capital"), language === "en" ? (c.capitalEn || c.capital) : c.capital],
-    [tr("continent"), c.continent],
+    [tr("continent"), continentLabel(c.continent)],
     [tr("domain"), c.tld],
     [tr("area"), formatArea(c.area)],
     [tr("population"), `${language === "de" ? "ca. " : "approx. "}${nf.format(c.population)}`],
