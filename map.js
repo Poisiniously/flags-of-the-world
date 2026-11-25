@@ -1034,6 +1034,24 @@ function outlineCollection(collection) {
   return { type: "FeatureCollection", features };
 }
 
+// Natural Earth cuts the leased Baikonur circle out of Kazakhstan; drop it and close the hole.
+function isBaikonur(feature) {
+  const p = (feature && feature.properties) || {};
+  return p.ADM0_A3 === "KAB" || p.ADMIN === "Baikonur" || p.NAME === "Baikonur" || p.name === "Baikonur";
+}
+
+function fillKazakhstanHole(features) {
+  for (let i = features.length - 1; i >= 0; i--) {
+    const f = features[i];
+    if (isBaikonur(f)) { features.splice(i, 1); continue; }
+    if (f.properties && f.properties.ADM0_A3 === "KAZ" && f.geometry) {
+      const g = f.geometry;
+      if (g.type === "Polygon") g.coordinates = [g.coordinates[0]];
+      else if (g.type === "MultiPolygon") g.coordinates = g.coordinates.map((p) => [p[0]]);
+    }
+  }
+}
+
 let outlineCache = null;
 function outlineData(collection) {
   if (!outlineCache) outlineCache = outlineCollection(collection);
@@ -1077,6 +1095,7 @@ async function fetchGeo() {
     });
 
   if (features.length < 150) throw new Error("Zu wenige Ländergrenzen geladen");
+  fillKazakhstanHole(features);
   geoData = { type: "FeatureCollection", features: rotateWorld(splitOverseasParts(features)) };
   outlineCache = null;
   console.info(`Natural Earth: ${features.length} Ländergrenzen geladen`);
