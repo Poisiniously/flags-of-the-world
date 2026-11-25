@@ -1076,11 +1076,11 @@ async function fetchGeo() {
   if (geoData) return geoData;
 
   const response = await fetch(GEOJSON_URL, { cache: "force-cache" });
-  if (!response.ok) throw new Error(`Kartendaten: HTTP ${response.status}`);
+  if (!response.ok) throw new Error(language === "de" ? `Kartendaten: HTTP ${response.status}` : `Map data: HTTP ${response.status}`);
 
   const raw = await response.json();
   if (!raw || raw.type !== "FeatureCollection" || !Array.isArray(raw.features)) {
-    throw new Error("Ungültiges GeoJSON-Format");
+    throw new Error(language === "de" ? "Ungültiges GeoJSON-Format" : "Invalid GeoJSON format");
   }
 
   const features = raw.features
@@ -1106,7 +1106,7 @@ async function fetchGeo() {
       };
     });
 
-  if (features.length < 150) throw new Error("Zu wenige Ländergrenzen geladen");
+  if (features.length < 150) throw new Error(language === "de" ? "Zu wenige Ländergrenzen geladen" : "Not enough country boundaries were loaded");
   fillKazakhstanHole(features);
   geoData = { type: "FeatureCollection", features: rotateWorld(splitOverseasParts(features)) };
   outlineCache = null;
@@ -1134,7 +1134,7 @@ async function startMap() {
       mapStarted = true;
       hideMapStatus();
     } catch (err) {
-      console.warn("Karte konnte nicht geladen werden:", err);
+      console.warn(language === "de" ? "Karte konnte nicht geladen werden:" : "Could not load map:", err);
       mapStarted = false;
 
       if (map) {
