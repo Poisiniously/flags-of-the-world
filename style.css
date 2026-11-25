@@ -7,6 +7,9 @@
   --accent: #6c8cff;
   --accent-2: #a56cff;
   --radius: 14px;
+  --hero-glow: #263066;
+  --map-ocean: #91B8CE;
+  --map-bg: #0b1020;
 }
 
 * { box-sizing: border-box; }
@@ -22,7 +25,7 @@ body {
 .hero {
   text-align: center;
   padding: 3rem 1rem 2rem;
-  background: radial-gradient(ellipse at top, #263066 0%, var(--bg) 70%);
+  background: radial-gradient(ellipse at top, var(--hero-glow) 0%, var(--bg) 70%);
 }
 .hero h1 {
   margin: 0;
@@ -261,7 +264,7 @@ body.modal-open { overflow: hidden; }
   height: 78vh;
   min-height: 480px;
   border-radius: var(--radius);
-  background: #0b1020;
+  background: var(--map-bg);
   border: 1px solid var(--surface-2);
 }
 .map-legend {
@@ -348,10 +351,36 @@ footer a { color: var(--accent); }
   color-scheme: light;
   --bg:#f4f6fb; --surface:#ffffff; --surface-2:#e4e8f2;
   --text:#172033; --muted:#64708a; --accent:#405fd6; --accent-2:#8953d6;
+  --hero-glow:#cfd8f5; --map-bg:#dfe6f3;
 }
 :root[data-theme="dark"] { color-scheme:dark; }
+/* Additional color themes */
+:root[data-theme="ocean"] {
+  color-scheme: dark;
+  --bg:#071c26; --surface:#0d2d3b; --surface-2:#154357;
+  --text:#e6f6fb; --muted:#8fb7c6; --accent:#2fc4d9; --accent-2:#3f8cff;
+  --hero-glow:#0f5468; --map-ocean:#2a7fa0; --map-bg:#05141b;
+}
+:root[data-theme="forest"] {
+  color-scheme: dark;
+  --bg:#0f1a13; --surface:#18281d; --surface-2:#24402d;
+  --text:#eaf5ec; --muted:#9bb8a3; --accent:#5fcf80; --accent-2:#c6d85a;
+  --hero-glow:#24502f; --map-ocean:#6fa3a0; --map-bg:#0a120d;
+}
+:root[data-theme="sunset"] {
+  color-scheme: dark;
+  --bg:#1f1220; --surface:#2e1a2e; --surface-2:#472a3c;
+  --text:#fdeee6; --muted:#c8a3a8; --accent:#ff8a5c; --accent-2:#ff5c8a;
+  --hero-glow:#6a2c46; --map-ocean:#b88aa0; --map-bg:#150b16;
+}
+:root[data-theme="contrast"] {
+  color-scheme: dark;
+  --bg:#000000; --surface:#0a0a0a; --surface-2:#6b6b6b;
+  --text:#ffffff; --muted:#d6d6d6; --accent:#ffe14d; --accent-2:#4dd2ff;
+  --hero-glow:#1a1a1a; --map-ocean:#3d5a73; --map-bg:#000000;
+}
 .preferences { position:absolute; top:1rem; right:1rem; display:flex; gap:.5rem; }
-.preferences button { border:1px solid var(--surface-2); background:var(--surface); color:var(--text); border-radius:999px; padding:.45rem .8rem; cursor:pointer; }
+.preferences button, .preferences select { border:1px solid var(--surface-2); background:var(--surface); color:var(--text); border-radius:999px; padding:.45rem .8rem; cursor:pointer; }
 .hero { position:relative; }
 .search-wrap { position:relative; }
 .suggestions { position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:30; max-height:320px; overflow:auto; background:var(--surface); border:1px solid var(--surface-2); border-radius:12px; box-shadow:0 12px 30px rgba(0,0,0,.25); }

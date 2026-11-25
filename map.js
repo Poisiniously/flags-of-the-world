@@ -777,6 +777,15 @@ function buildLayer() {
   }
 }
 
+// Ocean color comes from the active theme.
+function oceanColor() {
+  return getComputedStyle(document.documentElement).getPropertyValue("--map-ocean").trim() || "#91B8CE";
+}
+
+document.addEventListener("theme-changed", () => {
+  if (map && map.getLayer("background")) map.setPaintProperty("background", "background-color", oceanColor());
+});
+
 function createMap() {
   const instance = new maplibregl.Map({
     container: "map",
@@ -785,7 +794,7 @@ function createMap() {
       projection: { type: "globe" },
       sources: {},
       layers: [
-        { id: "background", type: "background", paint: { "background-color": "#91B8CE" } },
+        { id: "background", type: "background", paint: { "background-color": oceanColor() } },
       ],
     },
     // Start slightly closer than a full-world fit.

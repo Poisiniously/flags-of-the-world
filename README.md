@@ -25,7 +25,7 @@ An interactive, bilingual directory of **197 countries**. Browse national flags,
 
 ### Preferences and layout
 - German and English interface options.
-- Light and dark themes.
+- Six color themes (dark, light, ocean, forest, sunset, high contrast); the map's ocean color follows the theme.
 - Responsive layout for desktop, tablet, and mobile.
 - User preferences are stored in the browser's local storage.
 - No build step or package installation is required.

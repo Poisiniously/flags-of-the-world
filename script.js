@@ -78,6 +78,7 @@ function applyPreferences() {
   document.getElementById("footer-flags").textContent = language === "de" ? " – Flaggen" : " – flags";
   document.getElementById("footer-maps").textContent = language === "de" ? " – Kartenbibliothek" : " – mapping library";
   document.getElementById("footer-boundaries").textContent = language === "de" ? " – Ländergrenzen" : " – country boundaries";
+  renderThemeOptions();
   render(); renderFilters();
   document.dispatchEvent(new CustomEvent("language-changed"));
 }
@@ -86,14 +87,26 @@ document.getElementById("language-toggle").addEventListener("click", () => {
   storageSet("fotw-language", language);
   applyPreferences();
 });
-function setTheme(value) {
-  document.documentElement.dataset.theme = value;
-  document.getElementById("theme-toggle").textContent = value === "dark" ? "☀️ Light" : "🌙 Dark";
-  storageSet("fotw-theme", value);
+const THEMES = ["dark", "light", "ocean", "forest", "sunset", "contrast"];
+const THEME_NAMES = {
+  de: { dark: "Dunkel", light: "Hell", ocean: "Ozean", forest: "Wald", sunset: "Sonnenuntergang", contrast: "Hoher Kontrast" },
+  en: { dark: "Dark", light: "Light", ocean: "Ocean", forest: "Forest", sunset: "Sunset", contrast: "High contrast" },
+};
+function renderThemeOptions() {
+  const select = document.getElementById("theme-select");
+  for (const option of select.options) option.textContent = THEME_NAMES[language][option.value];
+  select.value = document.documentElement.dataset.theme;
+  select.setAttribute("aria-label", language === "de" ? "Farbschema" : "Theme");
 }
-const savedTheme = storageGet("fotw-theme");
-setTheme(savedTheme === "light" || savedTheme === "dark" ? savedTheme : "dark");
-document.getElementById("theme-toggle").addEventListener("click", () => setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark"));
+function setTheme(value) {
+  if (!THEMES.includes(value)) value = "dark";
+  document.documentElement.dataset.theme = value;
+  document.getElementById("theme-select").value = value;
+  storageSet("fotw-theme", value);
+  document.dispatchEvent(new CustomEvent("theme-changed"));
+}
+setTheme(storageGet("fotw-theme"));
+document.getElementById("theme-select").addEventListener("change", (event) => setTheme(event.target.value));
 
 // Country data and API loading
 const state = {
