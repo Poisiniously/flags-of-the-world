@@ -214,12 +214,18 @@ function mapApiCountry(c) {
   }
   if (!continent) return null;
 
+  const apiCapital = Array.isArray(c.capital)
+    ? c.capital[0]
+    : typeof c.capital === "string"
+      ? c.capital
+      : "";
+
   return {
     code,
     iso3: c.alpha3Code || null,
     name: (local && local.name) || c.name || code.toUpperCase(),
-    capital: (local && local.capital) || (c.capital && c.capital[0]) || "–",
-    capitalEn: (c.capital && c.capital[0]) || (local && local.capital) || "–",
+    capital: (local && local.capital) || apiCapital || "–",
+    capitalEn: apiCapital || (local && ENGLISH_CAPITALS[code]) || (local && local.capital) || "–",
     continent,
     area: typeof c.area === "number" ? c.area : local ? local.area : 0,
     population: typeof c.population === "number" ? c.population : local ? local.population : 0,
@@ -442,7 +448,11 @@ function setDataStatus(message, { warn = false, retry = false } = {}) {
   statusEl.hidden = false;
 }
 
-function showSource({ source, time }) {
+let currentDataResult = null;
+
+function showSource(result) {
+  currentDataResult = result;
+  const { source, time } = result;
   statusEl.hidden = true;
   statusEl.replaceChildren();
 
@@ -458,6 +468,11 @@ function showSource({ source, time }) {
     sourceEl.textContent = tr("offlineSource");
   }
 }
+
+// Re-render the current data source message when the interface language changes.
+document.addEventListener("language-changed", () => {
+  if (currentDataResult) showSource(currentDataResult);
+});
 
 let dataInitPromise = null;
 // Share an in-flight initialization so multiple triggers cannot start duplicate requests.
