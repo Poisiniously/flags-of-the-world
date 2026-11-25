@@ -781,8 +781,9 @@ function createMap() {
         { id: "background", type: "background", paint: { "background-color": "#91B8CE" } },
       ],
     },
-    bounds: [[-180, -80], [180, 80]],
-    fitBoundsOptions: { padding: 24, maxZoom: 1.4 },
+    // Start slightly closer than a full-world fit.
+    center: [10, 20],
+    zoom: 1.8,
     minZoom: 0,
     maxZoom: 7,
     renderWorldCopies: true,
