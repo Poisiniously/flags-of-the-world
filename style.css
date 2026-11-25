@@ -826,3 +826,9 @@ body {
 .quiz-review-item img{width:38px;height:25px;object-fit:cover;border-radius:3px}.quiz-review-item span{min-width:0;overflow-wrap:anywhere}.quiz-review-item strong{margin-left:auto;white-space:nowrap;color:#d45555;font-size:.8rem}.quiz-review-empty{color:var(--muted)}
 @media(max-width:560px){.quiz-settings,.quiz-options{grid-template-columns:1fr}.quiz-start-row{align-items:stretch;flex-direction:column}.quiz-start-row .quiz-primary{width:100%}.quiz-option{min-height:52px}}
 @media(prefers-reduced-motion:reduce){.quiz-progress-track span,.quiz-primary,.quiz-option{transition:none}}
+
+
+/* Quiz session controls */
+.quiz-stop{min-height:42px;padding:.6rem 1rem;border:1px solid var(--surface-2);border-radius:var(--control-radius,999px);background:transparent;color:var(--text);font:inherit;font-weight:700;cursor:pointer}
+.quiz-stop:hover{border-color:var(--accent);color:var(--accent)}
+.quiz-stop:focus-visible{outline:3px solid var(--accent-2);outline-offset:3px}
