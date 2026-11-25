@@ -43,7 +43,7 @@
       allCorrect:"No mistakes – every answer was correct.", again:"Play again", wrongMark:"Missed"
     }
   };
-  let questions=[], index=0, score=0, answered=false, mistakes=[];
+  let questions=[], index=0, score=0, answered=false, chosenCode=null, mistakes=[];
   const lang=()=>typeof language!=="undefined"&&language==="en"?"en":"de";
   const t=()=>copy[lang()];
   const name=(country)=>typeof displayName==="function"?displayName(country):country.name;
@@ -67,9 +67,11 @@
     index=0;score=0;answered=false;mistakes=[];
     el.intro.hidden=true;el.results.hidden=true;el.game.hidden=false;render();
   }
-  function render(){
+  function render(preserveAnswer=false){
     const q=questions[index],s=t();
-    answered=false;
+    const wasAnswered=answered, previousChoice=chosenCode;
+    answered=preserveAnswer?wasAnswered:false;
+    chosenCode=preserveAnswer?previousChoice:null;
     el.progressLabel.textContent=s.progress(index+1);el.scoreLabel.textContent=s.points(score);
     el.progress.setAttribute("aria-valuenow",String(index));el.progressBar.style.width=`${index/QUESTION_COUNT*100}%`;
     el.prompt.textContent=el.mode.value==="flags"?s.flagPrompt:s.capitalPrompt;
@@ -77,7 +79,10 @@
     if(el.mode.value==="flags"){
       const img=document.createElement("img");img.src=flag(q.country.code);img.alt=lang()==="de"?"Flagge":"Flag";img.loading="eager";el.visual.appendChild(img);
     }else{
-      const capital=document.createElement("div");capital.className="quiz-capital";capital.textContent=q.country.capital;el.visual.appendChild(capital);
+      const capital=document.createElement("div");capital.className="quiz-capital";
+      const liveCountry=typeof items!=="undefined"&&Array.isArray(items)?items.find(c=>c.code===q.country.code):null;
+      capital.textContent=lang()==="en"?(liveCountry?.capitalEn||liveCountry?.capital||q.country.capital):q.country.capital;
+      el.visual.appendChild(capital);
     }
     el.options.replaceChildren();
     q.options.forEach(option=>{
@@ -86,9 +91,21 @@
     });
     el.feedback.textContent="";el.feedback.className="quiz-feedback";el.next.hidden=true;
     el.next.textContent=index===QUESTION_COUNT-1?s.finish:s.next;el.questionCount.textContent=s.round;
+    if(preserveAnswer&&wasAnswered){
+      for(const button of el.options.querySelectorAll("button")){
+        button.disabled=true;
+        const option=q.options.find(country=>name(country)===button.textContent);
+        if(option?.code===q.country.code)button.classList.add("correct");
+        if(option?.code===previousChoice&&previousChoice!==q.country.code)button.classList.add("incorrect");
+      }
+      const wasCorrect=previousChoice===q.country.code;
+      el.feedback.textContent=wasCorrect?s.correct:s.wrong(name(q.country));
+      el.feedback.classList.add(wasCorrect?"correct":"incorrect");
+      el.next.hidden=false;
+    }
   }
   function answer(selected,selectedButton){
-    if(answered)return;answered=true;
+    if(answered)return;answered=true;chosenCode=selected.code;
     const correct=selected.code===questions[index].country.code;
     if(correct)score++;else mistakes.push(questions[index].country);
     for(const button of el.options.querySelectorAll("button")){
@@ -97,6 +114,7 @@
       if(option&&option.code===questions[index].country.code)button.classList.add("correct");
     }
     if(!correct)selectedButton.classList.add("incorrect");
+    el.progress.setAttribute("aria-valuenow",String(index+1));el.progressBar.style.width=`${(index+1)/QUESTION_COUNT*100}%`;
     el.feedback.textContent=correct?t().correct:t().wrong(name(questions[index].country));
     el.feedback.classList.add(correct?"correct":"incorrect");el.scoreLabel.textContent=t().points(score);el.next.hidden=false;
   }
@@ -129,7 +147,7 @@
     byId("quiz-continent-label").textContent=s.region;el.continent.options[0].textContent=s.all;
     s.continents.forEach((value,i)=>{el.continent.options[i+1].textContent=value;});
     byId("quiz-round-info").textContent=s.round;el.start.textContent=s.start;el.again.textContent=s.again;
-    if(!el.game.hidden&&questions.length)render();
+    if(!el.game.hidden&&questions.length)render(true);
     else if(!el.results.hidden)results();
   }
   el.start.addEventListener("click",start);el.again.addEventListener("click",start);
