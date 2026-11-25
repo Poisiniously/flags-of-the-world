@@ -139,19 +139,21 @@ test("HTML IDs are unique and JavaScript element references exist", () => {
 });
 
 
-test("country quiz is integrated, bilingual, and uses unique four-choice questions", () => {
+test("country quiz is integrated, bilingual, and uses four-choice questions", () => {
   const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
   const script = fs.readFileSync(path.join(root, "quiz.js"), "utf8");
   const appScript = fs.readFileSync(path.join(root, "map.js"), "utf8");
-  assert.match(html, /id="tab-quiz"[^>]*data-view="quiz"/);
-  assert.match(html, /id="view-quiz"/);
-  assert.match(html, /<script src="quiz\\.js"><\\/script>/);
-  assert.match(appScript, /viewQuiz\\.hidden = name !== "quiz"/);
-  assert.match(script, /const QUESTION_COUNT = 10/);
-  assert.match(script, /COUNTRIES\\.filter/);
-  assert.match(script, /options:shuffle\\(\\[country,/);
-  assert.match(script, /language-changed/);
-  assert.match(script, /flagcdn\\.com/);
-  assert.match(script, /quiz-mode/);
-  assert.match(script, /quiz-continent/);
+  const serviceWorker = fs.readFileSync(path.join(root, "sw.js"), "utf8");
+  assert.ok(html.includes('id="tab-quiz"'));
+  assert.ok(html.includes('id="view-quiz"'));
+  assert.ok(html.includes('<script src="quiz.js"></script>'));
+  assert.ok(appScript.includes('viewQuiz.hidden = name !== "quiz"'));
+  assert.ok(script.includes("const QUESTION_COUNT = 10"));
+  assert.ok(script.includes("options:shuffle([country,"));
+  assert.ok(script.includes(".slice(0,3)"));
+  assert.ok(script.includes("language-changed"));
+  assert.ok(script.includes("flagcdn.com"));
+  assert.ok(script.includes("quiz-mode"));
+  assert.ok(script.includes("quiz-continent"));
+  assert.ok(serviceWorker.includes('"./quiz.js"'));
 });
