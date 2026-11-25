@@ -13,6 +13,13 @@ An interactive, bilingual directory of **197 countries**. Browse national flags,
 - Sort alphabetically, by continent, area, or population.
 - Country detail dialog with capital, continent, domain, area, population, and population density.
 
+### Country quiz
+- Play a 10-question quiz using the 197-country baseline dataset.
+- Choose between identifying a country from its flag or matching a capital to its country.
+- Filter questions by continent or play with countries from every continent.
+- Four answer choices per question, immediate feedback, score tracking, and a review of missed answers.
+- Questions are randomized without repeating a country in the same round.
+
 ### Interactive world map
 - Built with [MapLibre GL JS](https://maplibre.org/).
 - Color countries by continent, population, or area.
@@ -80,7 +87,7 @@ The map loads its GeoJSON boundary data when the map view is opened. The service
 |---|---|
 | `index.html` | Main page structure, directory view, map view, and country detail dialog |
 | `style.css` | Layout, responsive styles, themes, and component styling |
-| `script.js` | Country data loading, caching, language/theme preferences, search, filters, sorting, and country details |
+| `script.js` | Country data loading, caching, language/theme preferences, search, filters, sorting, and country details |\n| `quiz.js` | Country quiz rounds, randomized questions, answer feedback, scoring, and review |
 | `map.js` | MapLibre setup, GeoJSON loading, country matching, map coloring, search, and map interactions |
 | `data.js` | Bundled country dataset, localized names, and German capital names |
 | `territories.js` | Overseas territory dataset and searchable aliases |
@@ -96,7 +103,7 @@ Run the automated data-integrity tests with Node.js 20 or later:
 npm test
 ```
 
-The test suite checks country and territory counts, unique ISO codes, required fields, valid continent assignments, territory sovereign-state references, and the offline map cache wiring.
+The test suite checks country and territory counts, unique ISO codes, required fields, valid continent assignments, territory sovereign-state references, quiz integration, JavaScript syntax, HTML references, and offline asset caching.
 
 ## Data scope and limitations
 
