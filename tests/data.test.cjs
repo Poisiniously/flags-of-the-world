@@ -109,9 +109,17 @@ test("removed map hint has no remaining translation or style references", () => 
   const script = fs.readFileSync(path.join(root, "script.js"), "utf8");
   const styles = fs.readFileSync(path.join(root, "style.css"), "utf8");
   const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
-  assert.doesNotMatch(script, /map-hint|hint:\s*["']Klicke auf ein Land/);
+  assert.doesNotMatch(script, /map-hint|\bhint\s*:/);
   assert.doesNotMatch(styles, /\.map-hint/);
   assert.doesNotMatch(html, /map-hint|Klicke auf ein Land für Flagge und Infos/);
+});
+
+test("closing search suggestions also resets the accessibility state", () => {
+  const script = fs.readFileSync(path.join(root, "script.js"), "utf8");
+  assert.match(script, /function closeSuggestions\(\)\s*\{[\s\S]*?suggestionBox\.hidden = true;[\s\S]*?searchInput\.setAttribute\("aria-expanded", "false"\)/);
+  assert.match(script, /if \(!q\) \{ closeSuggestions\(\); return; \}/);
+  assert.match(script, /state\.continent = "Alle"; closeSuggestions\(\);/);
+  assert.match(script, /!e\.target\.closest\("\.search-wrap"\)\) closeSuggestions\(\)/);
 });
 
 test("HTML IDs are unique and JavaScript element references exist", () => {
