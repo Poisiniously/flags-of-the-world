@@ -19,13 +19,13 @@
       description:"Erkenne Flaggen und ordne Hauptstädte den richtigen Ländern zu.",
       mode:"Quiz-Modus", flags:"Flaggen erkennen", capitals:"Hauptstädte zuordnen",
       region:"Region", all:"Alle Kontinente", continents:["Europa","Asien","Afrika","Nordamerika","Südamerika","Ozeanien"],
-      round:"10 Fragen · 4 Antwortmöglichkeiten", start:"Quiz starten",
-      progress:(n)=>`Frage ${n} von 10`, points:(n)=>`Punkte: ${n}`,
+      round:"Unbegrenzt viele Fragen · 4 Antwortmöglichkeiten", start:"Quiz starten",
+      progress:(n)=>`Frage ${n}`, points:(n)=>`Punkte: ${n}`,
       flagPrompt:"Zu welchem Land gehört diese Flagge?", capitalPrompt:"Zu welchem Land gehört diese Hauptstadt?",
       correct:"Richtig! Gut gemacht.", wrong:(name)=>`Leider falsch. Richtig wäre: ${name}.`,
-      next:"Weiter", finish:"Ergebnis ansehen", done:"Runde beendet",
-      result:(n)=>n===10?"Perfekt! Alle richtig.":n>=7?"Starke Leistung!":n>=4?"Guter Anfang!":"Weiter üben!",
-      score:(n)=>`${n} von 10 richtig`, missed:"Diese Länder waren noch schwierig:",
+      stop:"Quiz beenden", done:"Quiz beendet",
+      result:(score,total)=>total>0&&score/total>=0.9?"Hervorragend!":total>0&&score/total>=0.7?"Starke Leistung!":total>0&&score/total>=0.4?"Guter Anfang!":"Weiter üben!",
+      score:(score,total)=>`${score} von ${total} richtig`, missed:"Diese Länder waren noch schwierig:",
       allCorrect:"Keine Fehler – alle Antworten waren richtig.", again:"Nochmal spielen", wrongMark:"Falsch"
     },
     en: {
@@ -33,17 +33,17 @@
       description:"Recognize flags and match capitals to the right countries.",
       mode:"Quiz mode", flags:"Identify the flag", capitals:"Match the capital",
       region:"Region", all:"All continents", continents:["Europe","Asia","Africa","North America","South America","Oceania"],
-      round:"10 questions · 4 answer choices", start:"Start quiz",
-      progress:(n)=>`Question ${n} of 10`, points:(n)=>`Score: ${n}`,
+      round:"Unlimited questions · 4 answer choices", start:"Start quiz",
+      progress:(n)=>`Question ${n}`, points:(n)=>`Score: ${n}`,
       flagPrompt:"Which country does this flag belong to?", capitalPrompt:"Which country has this capital?",
       correct:"Correct! Well done.", wrong:(name)=>`Not quite. The correct answer is ${name}.`,
-      next:"Next", finish:"See results", done:"Round complete",
-      result:(n)=>n===10?"Perfect score!":n>=7?"Great work!":n>=4?"Good start!":"Keep practicing!",
-      score:(n)=>`${n} out of 10 correct`, missed:"Review these answers:",
+      stop:"End quiz", done:"Quiz ended",
+      result:(score,total)=>total>0&&score/total>=0.9?"Excellent!":total>0&&score/total>=0.7?"Great work!":total>0&&score/total>=0.4?"Good start!":"Keep practicing!",
+      score:(score,total)=>`${score} out of ${total} correct`, missed:"Review these answers:",
       allCorrect:"No mistakes – every answer was correct.", again:"Play again", wrongMark:"Missed"
     }
   };
-  let questions=[], index=0, score=0, answered=false, chosenCode=null, mistakes=[];
+  let questions=[], index=0, score=0, totalQuestions=0, answered=false, chosenCode=null, mistakes=[], autoAdvanceTimer=null;
   const lang=()=>typeof language!=="undefined"&&language==="en"?"en":"de";
   const t=()=>copy[lang()];
   const name=(country)=>typeof displayName==="function"?displayName(country):country.name;
@@ -64,7 +64,7 @@
   }
   function start(){
     if(!buildQuestions())return;
-    index=0;score=0;answered=false;mistakes=[];
+    index=0;score=0;totalQuestions=0;answered=false;chosenCode=null;mistakes=[];if(autoAdvanceTimer!==null){clearTimeout(autoAdvanceTimer);autoAdvanceTimer=null;}
     el.intro.hidden=true;el.results.hidden=true;el.game.hidden=false;render();
   }
   function render(preserveAnswer=false){
@@ -72,7 +72,7 @@
     const wasAnswered=answered, previousChoice=chosenCode;
     answered=preserveAnswer?wasAnswered:false;
     chosenCode=preserveAnswer?previousChoice:null;
-    el.progressLabel.textContent=s.progress(index+1);el.scoreLabel.textContent=s.points(score);
+    el.progressLabel.textContent=s.progress(totalQuestions+1);el.scoreLabel.textContent=s.points(score);
     el.progress.setAttribute("aria-valuenow",String(index));el.progressBar.style.width=`${index/QUESTION_COUNT*100}%`;
     el.prompt.textContent=el.mode.value==="flags"?s.flagPrompt:s.capitalPrompt;
     el.visual.replaceChildren();
@@ -89,8 +89,8 @@
       const button=document.createElement("button");button.type="button";button.className="quiz-option";button.textContent=name(option);
       button.addEventListener("click",()=>answer(option,button));el.options.appendChild(button);
     });
-    el.feedback.textContent="";el.feedback.className="quiz-feedback";el.next.hidden=true;
-    el.next.textContent=index===QUESTION_COUNT-1?s.finish:s.next;el.questionCount.textContent=s.round;
+    el.feedback.textContent="";el.feedback.className="quiz-feedback";
+    el.questionCount.textContent=s.progress(totalQuestions+1);
     if(preserveAnswer&&wasAnswered){
       for(const button of el.options.querySelectorAll("button")){
         button.disabled=true;
@@ -101,11 +101,10 @@
       const wasCorrect=previousChoice===q.country.code;
       el.feedback.textContent=wasCorrect?s.correct:s.wrong(name(q.country));
       el.feedback.classList.add(wasCorrect?"correct":"incorrect");
-      el.next.hidden=false;
     }
   }
   function answer(selected,selectedButton){
-    if(answered)return;answered=true;chosenCode=selected.code;
+    if(answered)return;answered=true;chosenCode=selected.code;totalQuestions++;
     const correct=selected.code===questions[index].country.code;
     if(correct)score++;else mistakes.push(questions[index].country);
     for(const button of el.options.querySelectorAll("button")){
@@ -116,16 +115,20 @@
     if(!correct)selectedButton.classList.add("incorrect");
     el.progress.setAttribute("aria-valuenow",String(index+1));el.progressBar.style.width=`${(index+1)/QUESTION_COUNT*100}%`;
     el.feedback.textContent=correct?t().correct:t().wrong(name(questions[index].country));
-    el.feedback.classList.add(correct?"correct":"incorrect");el.scoreLabel.textContent=t().points(score);el.next.hidden=false;
+    el.feedback.classList.add(correct?"correct":"incorrect");el.scoreLabel.textContent=t().points(score);
+    if(autoAdvanceTimer!==null)clearTimeout(autoAdvanceTimer);
+    autoAdvanceTimer=setTimeout(()=>{autoAdvanceTimer=null;advance();},500);
   }
   function advance(){
     if(!answered)return;index++;
-    if(index>=questions.length){results();return;}render();
+    if(index>=questions.length){if(!buildQuestions()){endQuiz();return;}index=0;}
+    render();
   }
-  function results(){
+  function endQuiz(){
+    if(autoAdvanceTimer!==null){clearTimeout(autoAdvanceTimer);autoAdvanceTimer=null;}
     el.game.hidden=true;el.results.hidden=false;
     byId("quiz-result-eyebrow").textContent=t().done;
-    el.resultTitle.textContent=t().result(score);el.resultScore.textContent=t().score(score);el.review.replaceChildren();
+    el.resultTitle.textContent=t().result(score,totalQuestions);el.resultScore.textContent=t().score(score,totalQuestions);el.review.replaceChildren();
     if(!mistakes.length){
       const p=document.createElement("p");p.className="quiz-review-empty";p.textContent=t().allCorrect;el.review.appendChild(p);
     }else{
@@ -146,11 +149,11 @@
     el.mode.options[0].textContent=s.flags;el.mode.options[1].textContent=s.capitals;
     byId("quiz-continent-label").textContent=s.region;el.continent.options[0].textContent=s.all;
     s.continents.forEach((value,i)=>{el.continent.options[i+1].textContent=value;});
-    byId("quiz-round-info").textContent=s.round;el.start.textContent=s.start;el.again.textContent=s.again;
+    byId("quiz-round-info").textContent=s.round;el.start.textContent=s.start;el.again.textContent=s.again;el.stop.textContent=s.stop;
     if(!el.game.hidden&&questions.length)render(true);
-    else if(!el.results.hidden)results();
+    else if(!el.results.hidden)endQuiz();
   }
   el.start.addEventListener("click",start);el.again.addEventListener("click",start);
-  el.next.addEventListener("click",advance);document.addEventListener("language-changed",updateLanguage);
+  el.stop.addEventListener("click",endQuiz);document.addEventListener("language-changed",updateLanguage);
   updateLanguage();
 })();
