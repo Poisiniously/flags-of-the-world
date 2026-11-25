@@ -21,6 +21,7 @@
   <nav class="tabs" role="tablist" aria-label="View">
     <button class="tab active" id="tab-flags" role="tab" aria-selected="true" aria-controls="view-flags" data-view="flags">🏳️ Flaggen</button>
     <button class="tab" id="tab-map" role="tab" aria-selected="false" aria-controls="view-map" data-view="map">🗺️ Karte</button>
+    <button class="tab" id="tab-quiz" role="tab" aria-selected="false" aria-controls="view-quiz" data-view="quiz">🧠 Quiz</button>
   </nav>
 
   <main>
@@ -86,6 +87,35 @@
         <div id="map-legend" class="map-legend" aria-label="Legende"></div>
       </div>
     </div>
+    <div id="view-quiz" role="tabpanel" aria-labelledby="tab-quiz" hidden>
+      <section class="quiz-shell" aria-labelledby="quiz-title">
+        <div class="quiz-heading">
+          <p class="quiz-eyebrow" id="quiz-eyebrow">Teste dein Wissen</p>
+          <h2 id="quiz-title">Wie gut kennst du die Länder der Welt?</h2>
+          <p id="quiz-description">Erkenne Flaggen und ordne Hauptstädte den richtigen Ländern zu.</p>
+        </div>
+        <div class="quiz-intro" id="quiz-intro">
+          <div class="quiz-settings">
+            <div><label for="quiz-mode" id="quiz-mode-label">Quiz-Modus</label><select id="quiz-mode"><option value="flags">Flaggen erkennen</option><option value="capitals">Hauptstädte zuordnen</option></select></div>
+            <div><label for="quiz-continent" id="quiz-continent-label">Region</label><select id="quiz-continent">
+              <option value="all">Alle Kontinente</option><option value="Europa">Europa</option><option value="Asien">Asien</option><option value="Afrika">Afrika</option><option value="Nordamerika">Nordamerika</option><option value="Südamerika">Südamerika</option><option value="Ozeanien">Ozeanien</option>
+            </select></div>
+          </div>
+          <div class="quiz-start-row"><p id="quiz-round-info">10 Fragen · 4 Antwortmöglichkeiten</p><button class="quiz-primary" id="quiz-start" type="button">Quiz starten</button></div>
+        </div>
+        <section class="quiz-game" id="quiz-game" aria-live="polite" hidden>
+          <div class="quiz-progress-meta"><span id="quiz-progress-label">Frage 1 von 10</span><span id="quiz-score-label">Punkte: 0</span></div>
+          <div class="quiz-progress-track" id="quiz-progress" role="progressbar" aria-label="Quiz-Fortschritt" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0"><span id="quiz-progress-bar"></span></div>
+          <h3 class="quiz-prompt" id="quiz-prompt"></h3><div class="quiz-visual" id="quiz-visual"></div>
+          <div class="quiz-options" id="quiz-options"></div><p class="quiz-feedback" id="quiz-feedback" role="status" aria-live="polite"></p>
+          <div class="quiz-next-row"><span id="quiz-question-count">10 Fragen</span><button class="quiz-primary" id="quiz-next" type="button" hidden>Weiter</button></div>
+        </section>
+        <section class="quiz-results" id="quiz-results" aria-live="polite" hidden>
+          <p class="quiz-eyebrow" id="quiz-result-eyebrow">Runde beendet</p><h3 id="quiz-result-title"></h3><p class="quiz-result-score" id="quiz-result-score"></p>
+          <div id="quiz-review" class="quiz-review"></div><button class="quiz-primary" id="quiz-again" type="button">Nochmal spielen</button>
+        </section>
+      </section>
+    </div>
   </main>
 
   <div id="modal" class="modal" hidden>
@@ -134,6 +164,7 @@
   <script src="data.js"></script>
   <script src="territories.js"></script>
   <script src="script.js"></script>
+  <script src="quiz.js"></script>
   <script type="module" src="map.js"></script>
   <script>
     if ("serviceWorker" in navigator && location.protocol !== "file:") {
