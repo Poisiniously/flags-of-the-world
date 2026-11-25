@@ -147,9 +147,52 @@ function fallbackTld(code) {
   return code === "gb" ? ".uk" : `.${code}`;
 }
 
+const ENGLISH_CAPITALS = {
+  at: "Vienna", cz: "Prague", pl: "Warsaw", gr: "Athens", it: "Rome",
+  pt: "Lisbon", be: "Brussels", ch: "Bern", dk: "Copenhagen", ru: "Moscow",
+  ua: "Kyiv", eg: "Cairo", cn: "Beijing", jp: "Tokyo", kr: "Seoul",
+  in: "New Delhi", th: "Bangkok", vn: "Hanoi", kh: "Phnom Penh",
+  mm: "Naypyidaw", la: "Vientiane", ir: "Tehran", iq: "Baghdad",
+  sy: "Damascus", sa: "Riyadh", ae: "Abu Dhabi", us: "Washington, D.C.",
+  mx: "Mexico City", br: "Brasília", ar: "Buenos Aires", cl: "Santiago",
+  co: "Bogotá", pe: "Lima", ec: "Quito", ve: "Caracas", za: "Pretoria",
+  ng: "Abuja", et: "Addis Ababa", tz: "Dodoma", ma: "Rabat", dz: "Algiers",
+  tn: "Tunis", ly: "Tripoli", au: "Canberra", nz: "Wellington",
+  md: "Chișinău", sk: "Bratislava", si: "Ljubljana", hr: "Zagreb",
+  rs: "Belgrade", ba: "Sarajevo", mk: "Skopje", al: "Tirana",
+  ee: "Tallinn", lv: "Riga", lt: "Vilnius", by: "Minsk",
+  is: "Reykjavík", lu: "Luxembourg", mt: "Valletta", cy: "Nicosia",
+  ge: "Tbilisi", am: "Yerevan", az: "Baku", kz: "Astana",
+  uz: "Tashkent", kg: "Bishkek", tj: "Dushanbe", tm: "Ashgabat",
+  pk: "Islamabad", bd: "Dhaka", np: "Kathmandu", bt: "Thimphu",
+  sg: "Singapore", my: "Kuala Lumpur", id: "Jakarta", ph: "Manila",
+  tw: "Taipei", mn: "Ulaanbaatar", kp: "Pyongyang", af: "Kabul",
+  jo: "Amman", lb: "Beirut", kw: "Kuwait City", qa: "Doha",
+  om: "Muscat", ye: "Sana'a", ps: "Ramallah", ke: "Nairobi",
+  ug: "Kampala", rw: "Kigali", bi: "Gitega", cd: "Kinshasa",
+  cg: "Brazzaville", ga: "Libreville", cm: "Yaoundé", gh: "Accra",
+  sn: "Dakar", ml: "Bamako", ne: "Niamey", bf: "Ouagadougou",
+  gm: "Banjul", sl: "Freetown", lr: "Monrovia", gn: "Conakry",
+  ci: "Yamoussoukro", ao: "Luanda", mz: "Maputo", zw: "Harare",
+  zm: "Lusaka", bw: "Gaborone", na: "Windhoek", ls: "Maseru",
+  sz: "Mbabane", mg: "Antananarivo", mu: "Port Louis", sc: "Victoria",
+  cv: "Praia", st: "São Tomé", gq: "Malabo", er: "Asmara",
+  so: "Mogadishu", sd: "Khartoum", ss: "Juba", cf: "Bangui",
+  td: "N'Djamena", mr: "Nouakchott", dj: "Djibouti",
+  cu: "Havana", jm: "Kingston", ht: "Port-au-Prince",
+  do: "Santo Domingo", cr: "San José", pa: "Panama City",
+  ni: "Managua", hn: "Tegucigalpa", sv: "San Salvador",
+  gt: "Guatemala City", bz: "Belmopan", bo: "Sucre", py: "Asunción",
+  uy: "Montevideo", gy: "Georgetown", sr: "Paramaribo",
+  fj: "Suva", pg: "Port Moresby", sb: "Honiara", vu: "Port Vila",
+  ws: "Apia", to: "Nuku'alofa", tv: "Funafuti", nr: "Yaren",
+  ki: "South Tarawa", mh: "Majuro", fm: "Palikir", pw: "Ngerulmud"
+};
+
 function withSearchText(c) {
   const englishName = new Intl.DisplayNames(["en"], { type: "region" }).of(c.code.toUpperCase()) || c.name;
-  return { ...c, searchText: normalize(`${c.name} ${englishName} ${c.capital} ${c.capitalEn || ""} ${c.code} ${c.tld}`) };
+  const capitalEn = c.capitalEn || ENGLISH_CAPITALS[c.code] || c.capital;
+  return { ...c, capitalEn, searchText: normalize(`${c.name} ${englishName} ${c.capital} ${capitalEn} ${c.code} ${c.tld}`) };
 }
 
 // Merge live API fields with bundled values for consistent names and continent labels.
