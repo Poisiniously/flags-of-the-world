@@ -157,3 +157,15 @@ test("country quiz is integrated, bilingual, and uses four-choice questions", ()
   assert.ok(script.includes("quiz-continent"));
   assert.ok(serviceWorker.includes('"./quiz.js"'));
 });
+
+
+test("country quiz runs continuously, auto-advances, and can be ended manually", () => {
+  const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  const script = fs.readFileSync(path.join(root, "quiz.js"), "utf8");
+  assert.ok(html.includes('id="quiz-stop"'));
+  assert.ok(!html.includes('id="quiz-next"'));
+  assert.match(script, /setTimeout\(\(\)=>\{autoAdvanceTimer=null;advance\(\);\},500\)/);
+  assert.match(script, /if\(index>=questions\.length\)\{if\(!buildQuestions\(\)\)\{endQuiz\(\);return;\}index=0;\}/);
+  assert.match(script, /el\.stop\.addEventListener\("click",endQuiz\)/);
+  assert.match(script, /score\(score,totalQuestions\)/);
+});
