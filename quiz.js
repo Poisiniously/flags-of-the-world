@@ -6,7 +6,7 @@
   const el = {
     mode: byId("quiz-mode"), continent: byId("quiz-continent"), intro: byId("quiz-intro"),
     game: byId("quiz-game"), results: byId("quiz-results"), start: byId("quiz-start"),
-    next: byId("quiz-next"), again: byId("quiz-again"), prompt: byId("quiz-prompt"),
+    next: byId("quiz-next"), stop: byId("quiz-stop"), again: byId("quiz-again"), prompt: byId("quiz-prompt"),
     visual: byId("quiz-visual"), options: byId("quiz-options"), feedback: byId("quiz-feedback"),
     progress: byId("quiz-progress"), progressBar: byId("quiz-progress-bar"),
     progressLabel: byId("quiz-progress-label"), scoreLabel: byId("quiz-score-label"),
