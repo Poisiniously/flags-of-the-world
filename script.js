@@ -90,6 +90,7 @@ function applyPreferences() {
   document.getElementById("footer-boundaries").textContent = language === "de" ? " – Ländergrenzen" : " – country boundaries";
   renderThemeOptions();
   render(); renderFilters();
+  if (typeof updateSuggestions === "function") updateSuggestions();
   document.dispatchEvent(new CustomEvent("language-changed"));
 }
 document.getElementById("language-toggle").addEventListener("click", () => {
