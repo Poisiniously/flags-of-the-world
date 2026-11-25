@@ -999,6 +999,19 @@ function outlineCollection(collection) {
   return { type: "FeatureCollection", features };
 }
 
+// Natural Earth cuts the Baikonur circle out of Kazakhstan; close that hole so the area is plain Kazakhstan.
+function fillKazakhstanHole(features) {
+  for (let i = features.length - 1; i >= 0; i--) {
+    if (isBaikonur(features[i])) { features.splice(i, 1); continue; }
+    const f = features[i];
+    if (f.properties && f.properties.ADM0_A3 === "KAZ" && f.geometry) {
+      const g = f.geometry;
+      if (g.type === "Polygon") g.coordinates = [g.coordinates[0]];
+      else if (g.type === "MultiPolygon") g.coordinates = g.coordinates.map((p) => [p[0]]);
+    }
+  }
+}
+
 let outlineCache = null;
 function outlineData(collection) {
   if (!outlineCache) outlineCache = outlineCollection(collection);
@@ -1042,6 +1055,7 @@ async function fetchGeo() {
     });
 
   if (features.length < 150) throw new Error("Zu wenige Ländergrenzen geladen");
+  fillKazakhstanHole(features);
   geoData = { type: "FeatureCollection", features: rotateWorld(splitOverseasParts(features)) };
   outlineCache = null;
   console.info(`Natural Earth: ${features.length} Ländergrenzen geladen`);
