@@ -25,10 +25,10 @@ An interactive, bilingual directory of **197 countries**. Browse national flags,
 
 ### Preferences and layout
 - German and English interface options.
-- Six color themes (dark, light, ocean, forest, sunset, high contrast); the map's ocean color follows the theme.
+- Eleven visual themes: dark, light, ocean, forest, sunset, high contrast, lavender, sakura, paper, retro, and midnight. Themes change typography, surfaces, shapes, shadows, and backgrounds as well as colors; the map's ocean color follows the theme.
 - Responsive layout for desktop, tablet, and mobile.
 - User preferences are stored in the browser's local storage.
-- No build step or package installation is required.
+- No build step is required. Node.js is only needed to run the automated test suite.
 
 ## Getting started
 
@@ -55,9 +55,9 @@ Serving the files over HTTP is recommended instead of opening `index.html` direc
 | [Natural Earth](https://www.naturalearthdata.com/) | Country boundary data used by the map |
 | [MapLibre GL JS](https://maplibre.org/) | Interactive map rendering |
 
-The map boundary data is loaded from the [Natural Earth Vector repository](https://github.com/nvkelso/natural-earth-vector). MapLibre GL JS and its CSS are loaded from the unpkg CDN.
+The map boundary data is loaded from the [Natural Earth Vector repository](https://github.com/nvkelso/natural-earth-vector) and cached for offline use. MapLibre GL JS and its CSS are loaded from the unpkg CDN and cached for offline use.
 
-An internet connection is required for live country data, flag images, the map library, and map boundary data. The bundled country data still allows the directory to display its basic information when the country-data API is unavailable.
+The first visit requires an internet connection to download live country data, flag images, MapLibre, and map boundaries. A service worker caches the app shell, MapLibre assets, and map GeoJSON so the directory and interactive map can be reopened offline after the first successful online visit. The browser must support service workers and the site must be served over HTTPS or localhost. Flag images and live country refreshes still require an internet connection. The bundled country data also allows the directory to display its basic information when the country-data API is unavailable.
 
 ## How country data is loaded
 
@@ -72,7 +72,7 @@ On initial load, the application uses this order:
 
 The API response is checked before it is accepted. If fewer than 150 entries can be matched to the bundled country list, the response is treated as invalid and the fallback process is used. Successful live data is cached in local storage.
 
-The map loads its GeoJSON boundary data when the map view is opened. Country records are matched to map features primarily through ISO alpha-3 codes, with additional aliases for selected map features.
+The map loads its GeoJSON boundary data when the map view is opened. The service worker pre-caches the boundary file and MapLibre assets; `map.js` also checks the browser cache if a network request fails. This makes the map available offline after its assets have been cached at least once. Country records are matched to map features primarily through ISO alpha-3 codes, with additional aliases for selected map features.
 
 ## Project structure
 
@@ -83,6 +83,20 @@ The map loads its GeoJSON boundary data when the map view is opened. Country rec
 | `script.js` | Country data loading, caching, language/theme preferences, search, filters, sorting, and country details |
 | `map.js` | MapLibre setup, GeoJSON loading, country matching, map coloring, search, and map interactions |
 | `data.js` | Bundled country dataset, localized names, and German capital names |
+| `territories.js` | Overseas territory dataset and searchable aliases |
+| `sw.js` | Service worker for offline app-shell, MapLibre, and map-data caching |
+| `tests/data.test.cjs` | Automated tests for country and territory data integrity |
+| `.github/workflows/tests.yml` | Runs the test suite on pushes and pull requests |
+
+## Tests
+
+Run the automated data-integrity tests with Node.js 20 or later:
+
+```bash
+npm test
+```
+
+The test suite checks country and territory counts, unique ISO codes, required fields, valid continent assignments, territory sovereign-state references, and the offline map cache wiring.
 
 ## Data scope and limitations
 
